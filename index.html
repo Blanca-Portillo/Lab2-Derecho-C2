@@ -1,906 +1,1150 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora y Sistema de Liquidación Laboral - El Salvador</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Incluyendo jsPDF para exportación oficial a PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        @media print {
-            body * {
-                visibility: hidden;
-            }
-            #panelComprobante, #panelComprobante * {
-                visibility: visible;
-            }
-            #panelComprobante {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                border: none;
-                box-shadow: none;
-            }
-            .no-print {
-                display: none !important;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calculadora de Prestaciones Laborales | El Salvador</title>
+  <meta name="description" content="Herramienta digital para calcular las prestaciones económicas de fin de contrato y recargos por jornadas especiales en El Salvador, conforme al Código de Trabajo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       DESIGN SYSTEM
+       ============================================================ */
+    :root {
+      --blue:        #1d4ed8;
+      --blue-hover:  #1e40af;
+      --blue-light:  #eff6ff;
+      --blue-border: #bfdbfe;
+      --emerald:     #059669;
+      --rose:        #e11d48;
+      --amber:       #d97706;
+
+      --bg-body:     #eef2f7;
+      --bg-card:     #ffffff;
+      --bg-subtle:   #f8fafc;
+      --bg-input:    #ffffff;
+      --text-main:   #0f172a;
+      --text-muted:  #64748b;
+      --border:      #e2e8f0;
+      --shadow-sm:   0 1px 3px 0 rgb(0 0 0 / .07);
+      --shadow-md:   0 4px 12px -2px rgb(0 0 0 / .10);
+      --shadow-lg:   0 14px 30px -4px rgb(0 0 0 / .13);
+      --radius:      12px;
+      --font:        'Plus Jakarta Sans', system-ui, sans-serif;
+      --mono:        'JetBrains Mono', monospace;
+    }
+    [data-theme="dark"] {
+      --bg-body:    #07101f;
+      --bg-card:    #101d33;
+      --bg-subtle:  #172030;
+      --bg-input:   #0e1a2e;
+      --text-main:  #e2e8f0;
+      --text-muted: #94a3b8;
+      --border:     #1e3050;
+      --blue-light: rgba(29,78,216,.18);
+      --blue-border:#1e40af;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg-body);
+      color: var(--text-main);
+      line-height: 1.55;
+      transition: background .25s, color .25s;
+      padding-bottom: 60px;
+    }
+
+    /* ── HERO ───────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1a3461 55%, #1d4ed8 100%);
+      padding: 36px 24px 30px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+    .hero-inner {
+      max-width: 1160px; margin: 0 auto;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22);
+      padding: 3px 12px; border-radius: 9999px;
+      font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+      color: #bfdbfe; margin-bottom: 10px;
+    }
+    .hero-title {
+      font-size: clamp(1.55rem, 4vw, 2.2rem);
+      font-weight: 800; letter-spacing: -.03em; line-height: 1.15;
+    }
+    .hero-title span { color: #60a5fa; }
+    .hero-sub { margin-top: 8px; color: #94a3b8; font-size: .87rem; max-width: 520px; }
+    .theme-btn {
+      background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.22);
+      color: #e2e8f0; padding: 9px 18px; border-radius: 8px;
+      font-size: .82rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: background .15s; align-self: center;
+    }
+    .theme-btn:hover { background: rgba(255,255,255,.18); }
+
+    /* ── LAYOUT ─────────────────────────────────────────── */
+    .container { max-width: 1160px; margin: 0 auto; padding: 26px 20px 0; }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, 1fr);
+      gap: 24px; align-items: start;
+    }
+    @media(max-width:820px){
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .form-grid { grid-template-columns: 1fr !important; }
+    }
+
+    /* ── QUICK BAR ──────────────────────────────────────── */
+    .quick-bar {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 16px; margin-bottom: 22px;
+      display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    .qlbl { font-size: .71rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--blue); white-space: nowrap; }
+    .qbtn {
+      background: var(--bg-subtle); border: 1px solid var(--border);
+      color: var(--text-main); padding: 5px 12px; border-radius: 6px;
+      font-size: .73rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      transition: all .14s;
+    }
+    .qbtn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+    /* ── CARDS ──────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 22px;
+      box-shadow: var(--shadow-sm); margin-bottom: 20px;
+    }
+    .card-head {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    }
+    .c-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0;
+    }
+    .ci-blue   { background: var(--blue-light); }
+    .ci-indigo { background: rgba(79,70,229,.1); }
+    .ci-green  { background: rgba(5,150,105,.1); }
+    .card-head h2 { font-size: .96rem; font-weight: 700; letter-spacing: -.01em; }
+    .card-head p  { font-size: .74rem; color: var(--text-muted); margin-top: 1px; }
+
+    /* ── FORMS ──────────────────────────────────────────── */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .span2 { grid-column: 1 / -1; }
+    .fg { display: flex; flex-direction: column; gap: 5px; }
+    label { font-size: .77rem; font-weight: 600; }
+    input[type="number"], input[type="text"], input[type="date"], select {
+      font-family: inherit; font-size: .87rem; padding: 9px 12px;
+      border-radius: 7px; border: 1.5px solid var(--border);
+      background: var(--bg-input); color: var(--text-main);
+      outline: none; width: 100%; transition: border-color .15s, box-shadow .15s;
+    }
+    input:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(29,78,216,.13);
+    }
+    .hint { font-size: .71rem; color: var(--text-muted); margin-top: 2px; }
+
+    /* ── RADIO PILLS ────────────────────────────────────── */
+    .radio-group { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+    .radio-pill {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px; border: 1.5px solid var(--border);
+      border-radius: 8px; cursor: pointer; font-size: .83rem; font-weight: 600;
+      background: var(--bg-subtle); user-select: none; transition: all .15s;
+    }
+    .radio-pill input[type="radio"] { display: none; }
+    .radio-pill:has(input:checked) { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
+    .rdot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid var(--border); display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0; transition: all .15s;
+    }
+    .radio-pill:has(input:checked) .rdot { border-color: var(--blue); background: var(--blue); }
+    .radio-pill:has(input:checked) .rdot::after {
+      content: ''; width: 5px; height: 5px; border-radius: 50%; background: #fff; display: block;
+    }
+
+    /* ── TOGGLE ─────────────────────────────────────────── */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 14px; border-radius: 8px;
+      background: var(--bg-subtle); border: 1px solid var(--border);
+      margin-top: 10px; cursor: pointer; transition: border-color .15s;
+    }
+    .toggle-row:hover { border-color: var(--blue); }
+    .toggle-info { font-size: .82rem; font-weight: 600; }
+    .toggle-info small { display: block; font-size: .71rem; color: var(--text-muted); font-weight: 400; margin-top: 1px; }
+    .tsw {
+      width: 38px; height: 21px; background: var(--border);
+      border-radius: 9999px; position: relative; transition: background .2s; flex-shrink: 0;
+    }
+    .tsw::after {
+      content: ''; position: absolute; left: 3px; top: 3px;
+      width: 15px; height: 15px; border-radius: 50%;
+      background: #fff; box-shadow: 0 1px 3px rgb(0 0 0/.3); transition: transform .2s;
+    }
+    .toggle-row.on .tsw { background: var(--blue); }
+    .toggle-row.on .tsw::after { transform: translateX(17px); }
+
+    /* ── EXTRA SECTION ──────────────────────────────────── */
+    .xs {
+      background: var(--bg-subtle); border: 1px solid var(--border);
+      border-radius: 9px; padding: 14px; margin-bottom: 12px;
+    }
+    .xs-title {
+      font-size: .72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .05em; color: var(--text-muted); margin-bottom: 12px;
+    }
+
+    /* ── FORMULA BOX ────────────────────────────────────── */
+    .fbox {
+      background: var(--bg-subtle); border: 1px solid var(--border);
+      border-left: 3px solid var(--blue); border-radius: 8px;
+      padding: 11px 13px; margin-top: 14px;
+    }
+    .fbox h4 {
+      font-size: .71rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--blue); margin-bottom: 6px;
+    }
+    .fbox ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .fbox li { font-size: .73rem; color: var(--text-muted); display: flex; gap: 6px; }
+    .fbox li::before { content: '→'; color: var(--blue); flex-shrink: 0; }
+    .fbox code { font-family: var(--mono); background: var(--bg-card); padding: 1px 5px; border-radius: 3px; font-size: .71rem; }
+
+    /* ── SIDEBAR ────────────────────────────────────────── */
+    .sidebar { position: sticky; top: 20px; }
+
+    /* Total hero */
+    .liq-card {
+      background: linear-gradient(135deg, #0f172a 0%, #1a3461 60%, #1d4ed8 100%);
+      border-radius: var(--radius); padding: 22px; color: #fff;
+      margin-bottom: 16px; box-shadow: var(--shadow-lg);
+      position: relative; overflow: hidden;
+    }
+    .liq-card::after {
+      content: '$'; position: absolute; right: 16px; bottom: -12px;
+      font-size: 5rem; font-weight: 800; color: rgba(255,255,255,.05); line-height: 1;
+    }
+    .liq-lbl { font-size: .71rem; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; font-weight: 700; }
+    .liq-bruto { font-size: 2.2rem; font-weight: 800; font-family: var(--mono); color: #60a5fa; margin-top: 4px; letter-spacing: -.02em; }
+    .liq-neto-row { display: flex; gap: 24px; margin-top: 10px; }
+    .liq-neto-item span { font-size: .68rem; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; display: block; }
+    .liq-neto-val { font-family: var(--mono); font-weight: 700; font-size: .95rem; }
+    .liq-neto-val.green { color: #34d399; }
+    .liq-neto-val.red   { color: #f87171; }
+
+    /* Ledger */
+    .ledger { display: flex; flex-direction: column; }
+    .ldg-gtitle {
+      font-size: .68rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--text-muted); margin: 12px 0 5px; padding-left: 2px;
+    }
+    .ldg-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 7px 4px; border-bottom: 1px solid var(--border); font-size: .82rem;
+    }
+    .ldg-row:last-child { border-bottom: none; }
+    .ldg-lbl small { display: block; font-size: .67rem; color: var(--text-muted); }
+    .ldg-val { font-family: var(--mono); font-size: .81rem; font-weight: 700; white-space: nowrap; }
+    .v-emerald { color: var(--emerald); }
+    .v-rose    { color: var(--rose); }
+    .v-zero    { color: var(--text-muted); font-weight: 500; }
+
+    .ldg-total {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 4px 4px; border-top: 2px solid var(--text-main);
+      margin-top: 8px; font-weight: 800; font-size: .96rem;
+    }
+    .ldg-total .ldg-val { color: var(--blue); font-size: 1rem; }
+
+    /* Base legal */
+    .base-legal {
+      margin-top: 14px; padding: 11px 13px; border-radius: 8px;
+      background: var(--blue-light); border: 1px solid var(--blue-border);
+      font-size: .71rem; color: var(--blue); line-height: 1.6;
+    }
+    .base-legal strong { display: block; margin-bottom: 3px; font-size: .73rem; }
+
+    /* Export btn */
+    .export-btn {
+      width: 100%; padding: 11px; border-radius: 8px; border: none;
+      background: var(--blue); color: #fff; font-family: inherit;
+      font-size: .84rem; font-weight: 700; cursor: pointer; margin-top: 14px;
+      transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 7px;
+    }
+    .export-btn:hover { background: var(--blue-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .export-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; filter: grayscale(0.5); }
+
+    /* ── BLOQUEO POR FALTA DE PREAVISO ──────────────────── */
+    .card.card-blocked {
+      opacity: 0.42;
+      pointer-events: none;
+      filter: grayscale(0.65);
+      position: relative;
+      cursor: not-allowed;
+      transition: all .25s ease;
+      user-select: none;
+    }
+    .card.card-blocked input,
+    .card.card-blocked select,
+    .card.card-blocked button {
+      pointer-events: none !important;
+    }
+    .blocked-banner {
+      background: #fef2f2;
+      border: 1.5px solid #f87171;
+      border-left: 5px solid #dc2626;
+      border-radius: 9px;
+      padding: 13px 15px;
+      color: #991b1b;
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+    [data-theme="dark"] .blocked-banner {
+      background: rgba(225,29,72,.18);
+      border-color: #e11d48;
+      border-left-color: #f43f5e;
+      color: #fecdd3;
+    }
+    .blocked-banner strong {
+      color: #b91c1c;
+    }
+    [data-theme="dark"] .blocked-banner strong {
+      color: #fda4af;
+    }
+    .tag-no-pagado {
+      background: rgba(225,29,72,.1);
+      color: #e11d48;
+      border: 1px solid rgba(225,29,72,.25);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: .67rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+    }
+    [data-theme="dark"] .tag-no-pagado {
+      background: rgba(225,29,72,.25);
+      color: #fda4af;
+      border-color: rgba(225,29,72,.4);
+    }
+
+    footer {
+      text-align: center; color: var(--text-muted);
+      font-size: .72rem; margin-top: 36px; padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── PRINT COMPROBANTE ──────────────────────────────── */
+    @media print {
+      body { background: #fff !important; color: #000 !important; padding: 0; font-family: 'Times New Roman', serif; }
+      .hero, .quick-bar, .card:not(#printCard), .layout > main, .sidebar > .liq-card,
+      .sidebar > .card:not(#printCard), .export-btn, footer { display: none !important; }
+      #printCard { display: block !important; box-shadow: none; border: none; max-width: 800px; margin: 0 auto; }
+      .print-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 16px; }
+      .print-header h1 { font-size: 1rem; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
+      .print-header p { font-size: .8rem; }
+      .print-section-title {
+        background: #000; color: #fff; font-size: .78rem; font-weight: 800;
+        text-transform: uppercase; padding: 4px 8px; margin: 14px 0 8px;
+        letter-spacing: .04em;
+      }
+      .ptable { width: 100%; border-collapse: collapse; font-size: .8rem; }
+      .ptable th, .ptable td { border: 1px solid #aaa; padding: 5px 8px; }
+      .ptable th { background: #f0f0f0; font-weight: 700; text-align: left; }
+      .ptable .right { text-align: right; font-family: monospace; }
+      .ptable tr.total-row td { font-weight: 900; border-top: 2px solid #000; }
+      .print-sig { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 30px; }
+      .sig-block { border-top: 1px solid #000; padding-top: 6px; font-size: .78rem; }
+      .print-warn { margin-top: 18px; font-size: .71rem; border: 1px solid #bbb; padding: 8px; border-radius: 4px; }
+      .print-warn strong { display: block; margin-bottom: 3px; }
+      .print-footer { text-align: right; font-size: .69rem; color: #666; margin-top: 14px; border-top: 1px solid #ddd; padding-top: 6px; }
+    }
+    #printCard { display: none; } /* hidden on screen */
+  </style>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen p-4 sm:p-6 font-sans">
+<body>
 
-    <div class="max-w-6xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-xl">
-        <header class="text-center mb-8 border-b pb-6">
-            <h1 class="text-3xl font-extrabold text-blue-900 mb-2">Sistema Integral de Liquidación y Prestaciones Laborales</h1>
-            <p class="text-slate-500 font-medium">Normativa Aplicable: Código de Trabajo de El Salvador, ISSS, AFP y Ministerio de Hacienda</p>
-            <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mt-4 no-print">
-                <button onclick="cambiarVista('calculadora')" id="btnTabCalc" class="px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow transition">Calculadora Interactiva</button>
-                <button onclick="cambiarVista('historial')" id="btnTabHist" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Historial Local</button>
-                <button onclick="cambiarVista('simuladorTributario')" id="btnTabSim" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Simulador Fiscal & Renta</button>
-                <button onclick="cambiarVista('documentosLegales')" id="btnTabDocs" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Generador de Cartas & Finiquitos</button>
-                <button onclick="cambiarVista('documentacion')" id="btnTabDoc" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Memoria Técnica y Legal</button>
+<!-- ─── HERO ──────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-badge">⚖️ LAB 2 · Derecho Empresarial e Informático · UGB 2026</div>
+      <h1 class="hero-title">Calculadora de <span>Prestaciones</span><br>Laborales · El Salvador</h1>
+      <p class="hero-sub">Calcula vacación proporcional, aguinaldo, indemnización, horas extras, asuetos y días de descanso conforme al Código de Trabajo de El Salvador. Genera comprobante exportable en PDF.</p>
+    </div>
+    <button class="theme-btn" id="themeToggle">🌙 Modo Oscuro</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Casos rápidos -->
+  <div class="quick-bar">
+    <span class="qlbl">Cargar Caso:</span>
+    <button class="qbtn" onclick="loadCase(1)">1· Despido injustificado</button>
+    <button class="qbtn" onclick="loadCase(2)">2· Renuncia voluntaria (&lt;4 años)</button>
+    <button class="qbtn" onclick="loadCase(3)">3· Renuncia voluntaria (≥4 años)</button>
+    <button class="qbtn" onclick="loadCase(4)">4· Liquidación completa</button>
+    <button class="qbtn" onclick="resetAll()">↺ Limpiar</button>
+  </div>
+
+  <div class="layout">
+    <!-- ── IZQUIERDA: FORMULARIO ───────────────────────────── -->
+    <main>
+      <form id="calcForm" onsubmit="return false;">
+
+        <!-- BLOQUE 1 -->
+        <div class="card" id="cardBloque1">
+          <div class="card-head">
+            <div class="c-icon ci-blue">💼</div>
+            <div>
+              <h2>Bloque 1 · Datos Financieros y Antigüedad</h2>
+              <p>Información del trabajador y período de servicio</p>
             </div>
-        </header>
-
-        <!-- ================= VISTA 1: CALCULADORA ================= -->
-        <div id="vistaCalculadora" class="space-y-6">
-            <form id="laborForm" class="space-y-6">
-                <!-- 0. Datos del Trabajador -->
-                <div class="bg-blue-900 text-white px-4 py-2 rounded-lg font-semibold text-lg flex justify-between items-center">
-                    <span>0. Datos Generales del Trabajador y Empresa</span>
-                    <button type="button" onclick="cargarEjemplo()" class="text-xs bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded text-white no-print">Cargar Datos de Prueba</button>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="nombreTrabajador">Nombre del Trabajador:</label>
-                        <input type="text" id="nombreTrabajador" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="Carlos Alberto Martínez">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="duiTrabajador">DUI / Identificación:</label>
-                        <input type="text" id="duiTrabajador" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="04589214-2">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="nombreEmpresa">Empresa / Institución:</label>
-                        <input type="text" id="nombreEmpresa" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="Industrias S.A. de C.V.">
-                    </div>
-                </div>
-
-                <!-- 1. Antigüedad y Fechas -->
-                <div class="bg-blue-900 text-white px-4 py-2 rounded-lg font-semibold text-lg">
-                    1. Datos Temporales y Salariales
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="salarioMensual">Salario Mensual (USD):</label>
-                        <input type="number" id="salarioMensual" step="0.01" min="0" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="700.00">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="anosLaborados">Años Laborados:</label>
-                        <input type="number" id="anosLaborados" min="0" value="2" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="mesesLaborados">Meses Fraccionados (0-11):</label>
-                        <input type="number" id="mesesLaborados" min="0" max="11" value="6" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="diasLaborados">Días Fraccionados (0-29):</label>
-                        <input type="number" id="diasLaborados" min="0" max="29" value="15" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <!-- Opciones Avanzadas de Prestaciones -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="vacacionesPagadas">¿Vacaciones del año actual ya fueron pagadas o gozadas?</label>
-                        <select id="vacacionesPagadas" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="no">No (Incluir cálculo proporcional de vacaciones)</option>
-                            <option value="si">Sí (Ya fueron pagadas/gozadas, no incluir)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="tipoCierre">Causa de Finalización de Relación Laboral:</label>
-                        <select id="tipoCierre" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                            <option value="despido">Despido Injustificado (Aplica Indemnización Art. 58 CT)</option>
-                            <option value="renuncia">Renuncia Voluntaria (Sin Indemnización por despido)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- 2. Jornadas Extraordinarias y Asuetos -->
-                <div class="bg-blue-900 text-white px-4 py-2 rounded-lg font-semibold text-lg">
-                    2. Jornadas Extraordinarias y Días Especiales (Periodo Actual)
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="horasExtrasDiurnas">Horas Extras Diurnas:</label>
-                        <input type="number" id="horasExtrasDiurnas" min="0" value="4" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="horasExtrasNocturnas">Horas Extras Nocturnas:</label>
-                        <input type="number" id="horasExtrasNocturnas" min="0" value="2" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="diasAsueto">Días de Asueto Laborados:</label>
-                        <input type="number" id="diasAsueto" min="0" value="1" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="diasDescanso">Días de Descanso Laborados:</label>
-                        <input type="number" id="diasDescanso" min="0" value="1" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <div class="flex gap-4">
-                    <button type="button" onclick="calcularPrestaciones()" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 text-lg">
-                        Calcular Liquidación Oficial y Generar Comprobante
-                    </button>
-                    <button type="button" onclick="guardarLiquidacionHistorial()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all duration-200">
-                        Guardar en Historial
-                    </button>
-                </div>
-            </form>
-
-            <!-- Panel de Resultados Automáticos -->
-            <div id="panelResultados" class="mt-10 bg-sky-50 border border-sky-200 p-6 rounded-2xl shadow-inner hidden">
-                <h2 class="text-2xl font-bold text-blue-900 mb-4 border-b pb-2">Panel de Resultados Automáticos de Liquidación</h2>
-                
-                <div class="space-y-3 text-slate-700">
-                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
-                        <span>Vacación Proporcional Acumulada (+ 30% Prima):</span>
-                        <span id="resVacaciones" class="font-semibold">$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
-                        <span>Aguinaldo Proporcional Acumulado:</span>
-                        <span id="resAguinaldo" class="font-semibold">$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
-                        <span>Indemnización (Art. 58 Código de Trabajo):</span>
-                        <span id="resIndemnizacion" class="font-semibold">$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
-                        <span>Subtotal Horas Extras Diurnas:</span>
-                        <span id="resHEsDiurnas" class="font-semibold">$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
-                        <span>Subtotal Horas Extras Nocturnas:</span>
-                        <span id="resHEsNocturnas" class="font-semibold">$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
-                        <span>Monto por Días de Asueto Laborados:</span>
-                        <span id="resAsuetos" class="font-semibold">$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
-                        <span>Monto por Días de Descanso Semanal Laborados:</span>
-                        <span id="resDescanso" class="font-semibold">$0.00</span>
-                    </div>
-
-                    <div class="flex justify-between border-t-2 border-blue-900 pt-3 text-lg font-bold text-blue-900">
-                        <span>Monto Total Bruto:</span>
-                        <span id="resBruto">$0.00</span>
-                    </div>
-
-                    <div class="pt-2 font-bold text-red-600">Deducciones de Ley Obligatorias en El Salvador:</div>
-                    <div class="flex justify-between border-b border-dashed border-red-200 py-2 text-red-700">
-                        <span>Cotización ISSS (3.0% / Tope Legal $1,000.00):</span>
-                        <span id="resISSS" class="font-semibold">-$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-red-200 py-2 text-red-700">
-                        <span>Cotización AFP (7.25%):</span>
-                        <span id="resAFP" class="font-semibold">-$0.00</span>
-                    </div>
-                    <div class="flex justify-between border-b border-dashed border-red-200 py-2 text-red-700">
-                        <span>Retención Impuesto sobre la Renta (Tabla MH):</span>
-                        <span id="resRenta" class="font-semibold">-$0.00</span>
-                    </div>
-
-                    <div class="flex justify-between border-t-2 border-blue-900 pt-3 text-xl font-extrabold text-blue-900">
-                        <span>Monto Total Neto a Pagar:</span>
-                        <span id="resTotalNeto">$0.00</span>
-                    </div>
-
-                    <div id="resMontoLetras" class="bg-white p-4 rounded-xl border border-slate-200 text-center font-bold text-blue-800 shadow-sm mt-4">
-                        Son: Cero dólares 00/100 USD
-                    </div>
-                </div>
+          </div>
+          <div class="form-grid">
+            <div class="fg span2">
+              <label for="nombreTrabajador">Nombre del trabajador</label>
+              <input id="nombreTrabajador" type="text" placeholder="Ej. Ana Cecilia Martínez" value="Ana Cecilia Martínez">
             </div>
-
-            <!-- Panel Comprobante Imprimible / Exportable a PDF -->
-            <div id="panelComprobante" class="mt-12 bg-white border-2 border-blue-900 p-6 sm:p-8 rounded-2xl shadow-xl hidden relative overflow-hidden">
-                <!-- Marca de agua formal -->
-                <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
-                    <span class="text-6xl font-black text-blue-900 transform -rotate-45">COMPROBANTE OFICIAL SV</span>
-                </div>
-
-                <div class="flex justify-between items-center border-b-2 border-blue-900 pb-4 mb-6">
-                    <div>
-                        <h3 class="text-2xl font-black text-blue-900">COMPROBANTE DE LIQUIDACIÓN LABORAL</h3>
-                        <p class="text-sm text-slate-500 font-medium mt-1">Conforme al Código de Trabajo de la República de El Salvador</p>
-                    </div>
-                    <div class="text-right text-xs text-slate-600">
-                        <div><strong>Folio Único:</strong> <span id="vFolio">---</span></div>
-                        <div><strong>Fecha:</strong> <span id="vFecha">---</span></div>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <div><strong>Empresa / Empleador:</strong> <span id="vEmpresa">---</span></div>
-                    <div><strong>Trabajador:</strong> <span id="vNombre">---</span></div>
-                    <div><strong>DUI:</strong> <span id="vDui">---</span></div>
-                    <div><strong>Salario Mensual Base:</strong> <span id="vSalario">---</span></div>
-                    <div><strong>Tiempo Laborado:</strong> <span id="vTiempo">---</span></div>
-                    <div><strong>Causa de Retiro:</strong> <span id="vCausa">---</span></div>
-                </div>
-
-                <div class="font-bold text-blue-900 mb-2">Desglose Económico de Liquidación:</div>
-                <div id="vDesgloseContainer" class="space-y-2 text-sm"></div>
-
-                <div class="flex justify-between border-t-2 border-blue-900 pt-4 mt-4 text-lg font-bold text-blue-900">
-                    <span>TOTAL NETO A PERCIBIR:</span>
-                    <span id="vTotalNeto">---</span>
-                </div>
-
-                <div id="vMontoLetras" class="bg-sky-50 p-3 rounded-lg text-center font-bold text-blue-800 text-sm mt-3 border border-sky-100">
-                    ---
-                </div>
-
-                <div class="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl text-xs sm:text-sm mt-6 leading-relaxed">
-                    <strong>ADVERTENCIA LEGAL OBLIGATORIA:</strong> Este comprobante ha sido generado de manera automática como herramienta informativa. No sustituye la liquidación oficial emitida por el Ministerio de Trabajo y Previsión Social (MTPS).
-                </div>
-
-                <div class="grid grid-cols-2 gap-8 mt-12 pt-8 border-t border-slate-300 text-center text-sm font-semibold">
-                    <div>
-                        <div class="border-t border-slate-700 w-3/4 mx-auto pt-2">Firma del Empleador / Representante</div>
-                    </div>
-                    <div>
-                        <div class="border-t border-slate-700 w-3/4 mx-auto pt-2">Firma del Trabajador (Conforme)</div>
-                    </div>
-                </div>
-
-                <div class="mt-8 flex flex-wrap justify-center gap-4 no-print">
-                    <button type="button" onclick="window.print()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">
-                        Imprimir / Guardar PDF Nativo
-                    </button>
-                    <button type="button" onclick="exportarPDFjsPDF()" class="bg-teal-700 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">
-                        Descargar PDF Profesional (jsPDF)
-                    </button>
-                </div>
+            <div class="fg">
+              <label for="patrono">Patrono / Empresa</label>
+              <input id="patrono" type="text" placeholder="Ej. Corporación ABC S.A." value="Corporación ABC S.A. de C.V.">
             </div>
+            <div class="fg">
+              <label for="cargo">Cargo desempeñado</label>
+              <input id="cargo" type="text" placeholder="Ej. Analista Contable" value="Analista Contable">
+            </div>
+            <div class="fg">
+              <label for="fechaIngreso">Fecha de ingreso</label>
+              <input id="fechaIngreso" type="date" value="2021-03-01">
+            </div>
+            <div class="fg">
+              <label for="fechaTermino">Fecha de terminación</label>
+              <input id="fechaTermino" type="date" value="2026-09-28">
+            </div>
+            <div class="fg span2">
+              <label for="salario">Ingreso mensual (USD)</label>
+              <input id="salario" type="number" step="0.01" min="0" value="600.00">
+              <span class="hint" id="salarioHint">Salario mínimo vigente (comercio/servicios): $365.00</span>
+            </div>
+            <div class="fg">
+              <label for="anios">Años laborados</label>
+              <input id="anios" type="number" min="0" max="60" step="1" value="5">
+            </div>
+            <div class="fg">
+              <label for="meses">Meses adicionales (0–11)</label>
+              <input id="meses" type="number" min="0" max="11" step="1" value="6">
+              <span class="hint" id="antiguedadHint">Antigüedad: —</span>
+            </div>
+          </div>
         </div>
 
-        <!-- ================= VISTA 2: HISTORIAL LOCAL ================= -->
-        <div id="vistaHistorial" class="space-y-6 hidden">
-            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border">
+        <!-- BLOQUE 2: Causa de finalización -->
+        <div class="card" id="cardBloque2">
+          <div class="card-head">
+            <div class="c-icon ci-indigo">📋</div>
+            <div>
+              <h2>Bloque 2 · Causa de Finalización</h2>
+              <p>Solo el despido INjustificado genera indemnización (Art. 58 CT)</p>
+            </div>
+          </div>
+          <div class="fg">
+            <label>Tipo de cierre de la relación laboral</label>
+            <div class="radio-group">
+              <label class="radio-pill">
+                <input type="radio" name="tipoCierre" value="despido_injusto" checked id="rDespidoInj">
+                <span class="rdot"></span>
+                Despido INjustificado
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="tipoCierre" value="despido_justo" id="rDespidoJus">
+                <span class="rdot"></span>
+                Despido justificado
+              </label>
+              <label class="radio-pill">
+                <input type="radio" name="tipoCierre" value="renuncia" id="rRenuncia">
+                <span class="rdot"></span>
+                Renuncia voluntaria
+              </label>
+            </div>
+          </div>
+          <!-- Info box: aparece según selección -->
+          <div id="boxFormulaCierre" style="margin-top:14px;"></div>
+
+          <!-- Preaviso: solo visible en renuncia -->
+          <div id="sectionPreaviso" style="display:none;margin-top:12px;padding:13px;border-radius:8px;background:var(--bg-subtle);border:1px solid var(--border);">
+            <div class="fg">
+              <label style="font-weight:700;">¿El trabajador notificó al patrono con anticipación? (Preaviso legal)</label>
+              <div class="radio-group" style="margin-top:6px;">
+                <label class="radio-pill">
+                  <input type="radio" name="preaviso" value="si" checked id="pSi">
+                  <span class="rdot"></span>
+                  Sí — notificó con anticipación
+                </label>
+                <label class="radio-pill">
+                  <input type="radio" name="preaviso" value="no" id="pNo">
+                  <span class="rdot"></span>
+                  No — NO notificó al patrono
+                </label>
+              </div>
+              <span class="hint" style="margin-top:8px;">Art. 401 CT: El trabajador debe dar aviso por escrito al patrono con antelación (15 o 30 días según cargo). Si no notifica, el trámite queda totalmente inhabilitado.</span>
+            </div>
+
+            <!-- Banner de advertencia y bloqueo cuando no notificó -->
+            <div id="preavisoBlockMsg" class="blocked-banner" style="display:none;margin-top:12px;">
+              <div style="display:flex;align-items:flex-start;gap:10px;">
+                <span style="font-size:1.5rem;line-height:1;">⛔</span>
                 <div>
-                    <h2 class="text-xl font-bold text-blue-900">Historial de Liquidaciones Guardadas</h2>
-                    <p class="text-xs text-slate-500">Almacenadas localmente en su navegador mediante LocalStorage.</p>
+                  <strong style="display:block;font-size:.85rem;margin-bottom:4px;">CÁLCULO Y FORMULARIO BLOQUEADOS</strong>
+                  <p style="margin:0 0 5px 0;">El trabajador <strong>NO notificó</strong> oportunamente su renuncia voluntaria al patrono.</p>
+                  <p style="margin:0;font-size:.74rem;opacity:.95;">Conforme al <strong>Art. 401 del Código de Trabajo</strong> de El Salvador, la omisión del preaviso genera responsabilidad por daños y perjuicios al patrono y <strong>suspende la procedencia de la liquidación voluntaria</strong>. Todos los campos de cálculo han sido inhabilitados hasta que se seleccione que sí notificó o se modifique la causa de terminación.</p>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="exportarCSV()" class="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-lg font-semibold shadow">Exportar CSV</button>
-                    <button onclick="exportarJSON()" class="bg-blue-800 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg font-semibold shadow">Exportar JSON</button>
-                    <button onclick="limpiarHistorial()" class="bg-red-600 hover:bg-red-500 text-white text-sm px-4 py-2 rounded-lg font-semibold shadow">Limpiar Historial</button>
-                </div>
+              </div>
             </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse bg-white shadow rounded-xl overflow-hidden">
-                    <thead>
-                        <tr class="bg-blue-900 text-white text-sm">
-                            <th class="p-3">Fecha</th>
-                            <th class="p-3">Trabajador</th>
-                            <th class="p-3">Empresa</th>
-                            <th class="p-3">Salario</th>
-                            <th class="p-3">Neto a Pagar</th>
-                            <th class="p-3">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaHistorialBody" class="text-sm divide-y divide-slate-200">
-                        <!-- Relleno dinámico -->
-                    </tbody>
-                </table>
-            </div>
+          </div>
         </div>
 
-        <!-- ================= VISTA 3: SIMULADOR TRIBUTARIO ================= -->
-        <div id="vistaSimuladorTributario" class="space-y-6 hidden">
-            <div class="bg-blue-50 border border-blue-200 p-6 rounded-2xl">
-                <h2 class="text-xl font-bold text-blue-900 mb-2">Simulador de Deducciones Fiscales y Seguridad Social (El Salvador)</h2>
-                <p class="text-sm text-slate-600 mb-6">Ingrese un salario mensual para simular los tramos de retención de Renta del Ministerio de Hacienda (MH) y las aportaciones a ISSS y AFP.</p>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1" for="simSalario">Salario Mensual Bruto (USD):</label>
-                        <input type="number" id="simSalario" step="0.01" value="1200.00" oninput="ejecutarSimulacionFiscal()" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded-xl border shadow-sm">
-                        <div class="text-xs text-slate-500 font-semibold uppercase">Cotización ISSS (3.0%)</div>
-                        <div id="simResISSS" class="text-2xl font-bold text-red-600 mt-1">$0.00</div>
-                        <div class="text-xs text-slate-400 mt-1">Tope legal cotizable: $1,000.00</div>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border shadow-sm">
-                        <div class="text-xs text-slate-500 font-semibold uppercase">Cotización AFP (7.25%)</div>
-                        <div id="simResAFP" class="text-2xl font-bold text-red-600 mt-1">$0.00</div>
-                        <div class="text-xs text-slate-400 mt-1">Sin tope máximo legal</div>
-                    </div>
-                    <div class="bg-white p-4 rounded-xl border shadow-sm">
-                        <div class="text-xs text-slate-500 font-semibold uppercase">Retención Renta (MH)</div>
-                        <div id="simResRenta" class="text-2xl font-bold text-red-600 mt-1">$0.00</div>
-                        <div id="simTramo" class="text-xs text-blue-700 mt-1">Tramo aplicable...</div>
-                    </div>
-                </div>
-
-                <div class="mt-6 bg-white p-6 rounded-xl border shadow-sm">
-                    <h3 class="font-bold text-blue-900 mb-3">Tablas Oficiales de Renta - Ministerio de Hacienda (El Salvador)</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-xs text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-100 text-slate-700">
-                                    <th class="p-2 border">Tramo</th>
-                                    <th class="p-2 border">Desde (USD)</th>
-                                    <th class="p-2 border">Hasta (USD)</th>
-                                    <th class="p-2 border">% Aplicable</th>
-                                    <th class="p-2 border">Sobre Exceso de</th>
-                                    <th class="p-2 border">Cuota Fija</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="p-2 border font-semibold">I (Iramo I)</td>
-                                    <td class="p-2 border">$0.01</td>
-                                    <td class="p-2 border">$472.00</td>
-                                    <td class="p-2 border text-green-600 font-bold">Exento</td>
-                                    <td class="p-2 border">$0.00</td>
-                                    <td class="p-2 border">$0.00</td>
-                                </tr>
-                                <tr class="bg-slate-50">
-                                    <td class="p-2 border font-semibold">II (Tramo II)</td>
-                                    <td class="p-2 border">$472.01</td>
-                                    <td class="p-2 border">$895.24</td>
-                                    <td class="p-2 border">10%</td>
-                                    <td class="p-2 border">$472.00</td>
-                                    <td class="p-2 border">$17.50</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-2 border font-semibold">III (Tramo III)</td>
-                                    <td class="p-2 border">$895.25</td>
-                                    <td class="p-2 border">$2,038.10</td>
-                                    <td class="p-2 border">20%</td>
-                                    <td class="p-2 border">$895.24</td>
-                                    <td class="p-2 border">$60.00</td>
-                                </tr>
-                                <tr class="bg-slate-50">
-                                    <td class="p-2 border font-semibold">IV (Tramo IV)</td>
-                                    <td class="p-2 border">$2,038.11</td>
-                                    <td class="p-2 border">En adelante</td>
-                                    <td class="p-2 border">30%</td>
-                                    <td class="p-2 border">$2,038.10</td>
-                                    <td class="p-2 border">$288.57</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- BLOQUE 3: Vacaciones proporcionales -->
+        <div class="card" id="cardBloque3">
+          <div class="card-head">
+            <div class="c-icon ci-green">🏖️</div>
+            <div>
+              <h2>Bloque 3 · Vacaciones Proporcionales</h2>
+              <p>¿Cuándo fue la última vez que gozó vacaciones? (Arts. 177, 187 CT)</p>
             </div>
+          </div>
+          <div class="form-grid">
+            <div class="fg span2">
+              <label for="ultimaVacacion">Fecha en que gozó sus últimas vacaciones <em style="font-weight:400;color:var(--text-muted);">(si nunca gozó, pon la fecha de ingreso)</em></label>
+              <input id="ultimaVacacion" type="date" value="2025-09-28">
+              <span class="hint" id="hintVacaciones">Se calcula desde esta fecha hasta la fecha de terminación.</span>
+            </div>
+          </div>
+          <div id="infoVacResult" style="margin-top:12px;padding:10px 13px;border-radius:8px;font-size:.8rem;background:var(--blue-light);border:1px solid var(--blue-border);color:var(--blue);"></div>
         </div>
 
-        <!-- ================= VISTA 4: DOCUMENTOS LEGALES & FINIQUITOS ================= -->
-        <div id="vistaDocumentosLegales" class="space-y-6 hidden">
-            <div class="bg-slate-50 border border-slate-200 p-6 rounded-2xl">
-                <h2 class="text-xl font-bold text-blue-900 mb-2">Generador de Cartas de Renuncia y Finiquitos Laborales</h2>
-                <p class="text-sm text-slate-600 mb-6">Seleccione el tipo de documento legal requerido, personalice los datos y descárguelo o imprímalo directamente.</p>
-                
-                <div class="flex gap-4 mb-6">
-                    <button onclick="cambiarTipoDoc('renuncia')" id="btnDocRenuncia" class="px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow text-sm">Carta de Renuncia Voluntaria</button>
-                    <button onclick="cambiarTipoDoc('finiquito')" id="btnDocFiniquito" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow text-sm">Acta de Finiquito Laboral</button>
-                </div>
-
-                <!-- Plantilla 1: Carta de Renuncia -->
-                <div id="plantillaRenuncia" class="bg-white p-8 border rounded-xl shadow space-y-4 text-sm leading-relaxed text-slate-800">
-                    <div class="text-right">San Salvador, <span id="docFechaRenuncia">---</span></div>
-                    <div class="font-bold">
-                        A la atención de:<br>
-                        Recursos Humanos / Gerencia General<br>
-                        <span id="docEmpresaRenuncia">Industrias S.A. de C.V.</span>
-                    </div>
-                    <div>Estimados señores:</div>
-                    <p>
-                        Por medio de la presente, yo, <strong id="docNombreRenuncia">Carlos Alberto Martínez</strong>, portador del Documento Único de Identidad (DUI) número <strong id="docDuiRenuncia">04589214-2</strong>, por motivos de índole personal, presento mi renuncia voluntaria al cargo de desempeñaba en la empresa, la cual se hará efectiva a partir del día <input type="date" id="fechaEfectivaRenuncia" class="border p-1 rounded">.
-                    </p>
-                    <p>
-                        A la vez, manifiesto expresamente que durante el tiempo que presté mis servicios para esta institución, recibí puntualmente el pago de mis salarios ordinarios y extraordinarios, así como el goce de mis prestaciones de ley, otorgando el más amplio y eficaz finiquito conforme a derecho.
-                    </p>
-                    <div>Atentamente,</div>
-                    <div class="mt-16 pt-4 border-t border-slate-400 w-1/3">
-                        Firma del Trabajador
-                    </div>
-                </div>
-
-                <!-- Plantilla 2: Finiquito Laboral -->
-                <div id="plantillaFiniquito" class="bg-white p-8 border rounded-xl shadow space-y-4 text-sm leading-relaxed text-slate-800 hidden">
-                    <div class="text-center font-black text-blue-900 text-lg mb-4">ACTA DE FINIQUITO Y LIQUIDACIÓN LABORAL</div>
-                    <p>
-                        En la ciudad de San Salvador, a los <span id="docFechaFiniquito">---</span>, comparecen por una parte la entidad mercantil <strong id="docEmpresaFiniquito">Industrias S.A. de C.V.</strong>, y por otra el/la trabajador(a) <strong id="docNombreFiniquito">Carlos Alberto Martínez</strong>, portador del DUI <strong id="docDuiFiniquito">04589214-2</strong>.
-                    </p>
-                    <p>
-                        Ambas partes manifiestan que han convenido finalizar la relación laboral que los unía, procediendo el empleador a cancelar al trabajador la cantidad neta de <strong id="docMontoFiniquito">$0.00</strong> en concepto de indemnización, vacaciones proporcionales, aguinaldo proporcional y demás derechos laborales correspondientes.
-                    </p>
-                    <p>
-                        Por medio del presente documento, el trabajador otorga a favor de la empresa el más amplio finiquito liberándola de cualquier obligación o reclamación judicial o administrativa posterior ante el Ministerio de Trabajo y Previsión Social (MTPS).
-                    </p>
-                    <div class="grid grid-cols-2 gap-12 mt-16 pt-8 text-center font-semibold">
-                        <div class="border-t border-slate-700 pt-2">Por el Empleador</div>
-                        <div class="border-t border-slate-700 pt-2">Por el Trabajador</div>
-                    </div>
-                </div>
-
-                <div class="mt-6 flex justify-end no-print">
-                    <button onclick="window.print()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow">Imprimir Documento</button>
-                </div>
+        <!-- BLOQUE 4: Días de asueto -->
+        <div class="card" id="cardBloque4">
+          <div class="card-head">
+            <div class="c-icon ci-amber" style="background:rgba(217,119,6,.1);">📅</div>
+            <div>
+              <h2>Bloque 4 · Días de Asueto Laborados</h2>
+              <p>Selecciona los asuetos nacionales en que el trabajador laboró (Art. 192 CT)</p>
             </div>
+          </div>
+          <div class="toggle-row" id="toggleSinAsueto">
+            <div class="toggle-info">No aplica — no laboró en ningún asueto
+              <small>Activa si el trabajador no trabajó ningún día de asueto nacional</small>
+            </div>
+            <div class="tsw"></div>
+          </div>
+          <div id="asuetosSection" style="margin-top:14px;">
+            <div style="font-size:.77rem;font-weight:600;margin-bottom:8px;">Marca los días de asueto nacionales en que laboró:</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;" id="asuetoGrid"></div>
+            <div style="font-size:.72rem;color:var(--text-muted);margin-top:8px;" id="asuetoCount">0 días seleccionados</div>
+          </div>
         </div>
 
-        <!-- ================= VISTA 5: DOCUMENTACIÓN TÉCNICA Y LEGAL ================= -->
-        <div id="vistaDocumentacion" class="space-y-8 hidden">
-            <div class="bg-blue-50 border border-blue-200 p-6 rounded-2xl">
-                <h2 class="text-xl font-bold text-blue-900 mb-3">1. Memoria de Fórmulas y Base Legal (Código de Trabajo de El Salvador)</h2>
-                <div class="space-y-4 text-sm text-slate-700 leading-relaxed">
-                                        
-<p><strong>Salario Diario:</strong> Se calcula dividiendo tu sueldo mensual entre 30 días. Esto sirve como base para pagar cada día laborado o fracción de tus prestaciones.</p>
-<p><strong>Vacaciones y Prima (Arts. 177 y 187 del Código de Trabajo):</strong> Por cada año de trabajo tienes derecho a 15 días de descanso pagado, más un 30% extra sobre ese valor para tus gastos vacacionales. Si terminas antes del año, se te paga la parte proporcional al tiempo exacto que trabajaste.</p>
-<p><strong>Aguinaldo (Arts. 198 y 202 del Código de Trabajo):</strong> Es una bonificación de fin de año que depende de cuánto tiempo llevas en la empresa: 15 días de salario si tienes menos de 3 años, 19 días si tienes entre 3 y 10 años, y 21 días si tienes 10 o más años de servicio. También se paga de forma proporcional si saliste antes de diciembre.</p>
-<p><strong>Indemnización por Despido Injustificado (Art. 58 del Código de Trabajo):</strong> Si te despiden sin una causa justificada establecida por la ley, la empresa debe pagarte el equivalente a 30 días de salario por cada año que trabajaste (y su parte proporcional si trabajaste meses o días adicionales), garantizando por ley un pago mínimo de al menos 15 días.</p>
-                </div>
+        <!-- BLOQUE 5: Horas extras y descanso semanal -->
+        <div class="card" id="cardBloque5">
+          <div class="card-head">
+            <div class="c-icon ci-green">⏱️</div>
+            <div>
+              <h2>Bloque 5 · Horas Extraordinarias y Descanso Semanal</h2>
+              <p>Jornadas extraordinarias <strong>PENDIENTES DE PAGO (NO PAGADAS)</strong> que se adeudan al momento de la liquidación (Art. 169 CT)</p>
             </div>
+          </div>
+
+          <!-- Aclaración destacada sobre pago de horas extras -->
+          <div style="background:var(--blue-light);border:1px solid var(--blue-border);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.78rem;color:var(--blue);line-height:1.5;">
+            <strong>ℹ️ Aclaración importante sobre horas extras y descansos:</strong>
+            <p style="margin:3px 0 0 0;">
+              En esta sección se deben registrar <strong>ÚNICAMENTE las horas extraordinarias y descansos NO PAGADOS (adeudados al trabajador)</strong>. Si las horas extras o descansos trabajados ya le fueron remunerados en sus recibos de sueldo anteriores, <strong>NO deben sumarse (déjelas en 0)</strong> para evitar duplicar pagos.
+            </p>
+          </div>
+
+          <div class="toggle-row" id="toggleNoAplica">
+            <div class="toggle-info">No aplica — sin horas extras pendientes ni descansos adeudados
+              <small>Activa si el patrono se encuentra al día y no adeuda jornadas extraordinarias</small>
+            </div>
+            <div class="tsw"></div>
+          </div>
+          <div id="hextSection" style="margin-top:14px;">
+            <div class="xs">
+              <div class="xs-title">Horas extraordinarias adeudadas (no pagadas)</div>
+              <div class="form-grid">
+                <div class="fg">
+                  <label for="hExtDiurnas" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                    <span>Horas extras diurnas (6:00 a.m. – 7:00 p.m.)</span>
+                    <span class="tag-no-pagado">NO PAGADAS</span>
+                  </label>
+                  <input id="hExtDiurnas" type="number" min="0" step=".5" value="0">
+                  <span class="hint" id="hintDiurnas">¿Fueron pagadas? No · Ingrese horas pendientes de remunerar (Recargo 100%, Art. 169 CT)</span>
+                </div>
+                <div class="fg">
+                  <label for="hExtNocturnas" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                    <span>Horas extras nocturnas (7:00 p.m. – 6:00 a.m.)</span>
+                    <span class="tag-no-pagado">NO PAGADAS</span>
+                  </label>
+                  <input id="hExtNocturnas" type="number" min="0" step=".5" value="0">
+                  <span class="hint" id="hintNocturnas">¿Fueron pagadas? No · Ingrese horas pendientes de remunerar (Recargo 100% s/hora nocturna, Arts. 168-169 CT)</span>
+                </div>
+              </div>
+            </div>
+            <div class="xs">
+              <div class="xs-title">Días de descanso semanal laborados adeudados (no pagados)</div>
+              <div class="form-grid">
+                <div class="fg">
+                  <label for="diasDescanso" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px;">
+                    <span>Días de descanso semanal (7.° día) laborados</span>
+                    <span class="tag-no-pagado">NO PAGADOS</span>
+                  </label>
+                  <input id="diasDescanso" type="number" min="0" step="1" value="0">
+                  <span class="hint">¿Fueron pagados? No · Días de descanso pendientes de remunerar (Salario doble: Arts. 175-176 CT)</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+      </form>
+    </main>
+
+    <!-- ── DERECHA: RESULTADOS ─────────────────────────────── -->
+    <aside class="sidebar">
+
+      <!-- Banner de bloqueo en el sidebar -->
+      <div id="sidebarBlockBanner" class="blocked-banner" style="display:none;margin-bottom:14px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <span style="font-size:1.3rem;line-height:1;">⛔</span>
+          <div>
+            <strong style="display:block;font-size:.8rem;margin-bottom:2px;">Liquidación Inhabilitada</strong>
+            <p style="margin:0;font-size:.73rem;">Se requiere notificación formal de renuncia (preaviso) para generar los cálculos y el comprobante (Art. 401 CT).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero total -->
+      <div class="liq-card">
+        <div class="liq-lbl">Total Devengado (Bruto)</div>
+        <div class="liq-bruto" id="lblBruto">$0.00</div>
+        <div class="liq-neto-row">
+          <div class="liq-neto-item">
+            <span>Deducciones</span>
+            <div class="liq-neto-val red" id="lblDedTotal">-$0.00</div>
+          </div>
+          <div class="liq-neto-item">
+            <span>Neto a Pagar</span>
+            <div class="liq-neto-val green" id="lblNetoHero">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desglose -->
+      <div class="card">
+        <div class="card-head" style="margin-bottom:4px;">
+          <div>
+            <h2>Desglose de Prestaciones</h2>
+            <p id="lblNombreResult">—</p>
+          </div>
+        </div>
+
+        <div class="ledger">
+          <div class="ldg-gtitle">Prestaciones proporcionales</div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Vacación proporcional<small id="descVacacion">—</small></div>
+            <div class="ldg-val v-emerald" id="lblVacacion">$0.00</div>
+          </div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Aguinaldo proporcional<small id="descAguinaldo">—</small></div>
+            <div class="ldg-val v-emerald" id="lblAguinaldo">$0.00</div>
+          </div>
+
+          <div class="ldg-gtitle">Compensación por finalización</div>
+          <div class="ldg-row">
+            <div class="ldg-lbl"><span id="lblCompLabel">Indemnización</span><small id="descComp">—</small></div>
+            <div class="ldg-val v-emerald" id="lblComp">$0.00</div>
+          </div>
+
+          <div class="ldg-gtitle">Jornadas extraordinarias no pagadas</div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Horas extras diurnas (no pagadas)<small id="descHD">—</small></div>
+            <div class="ldg-val v-emerald" id="lblHD">$0.00</div>
+          </div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Horas extras nocturnas (no pagadas)<small id="descHN">—</small></div>
+            <div class="ldg-val v-emerald" id="lblHN">$0.00</div>
+          </div>
+
+          <div class="ldg-gtitle">Días especiales no pagados</div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Días de asueto laborados (no pagados)<small id="descAsue">—</small></div>
+            <div class="ldg-val v-emerald" id="lblAsue">$0.00</div>
+          </div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Días de descanso semanal (no pagados)<small id="descDesc">—</small></div>
+            <div class="ldg-val v-emerald" id="lblDesc">$0.00</div>
+          </div>
+
+          <div class="ldg-gtitle">Deducciones de ley</div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Cotización ISSS (trabajador 3%)<small id="descIsss">—</small></div>
+            <div class="ldg-val v-rose" id="lblIsss">-$0.00</div>
+          </div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Cotización AFP (trabajador 7.25%)<small id="descAfp">—</small></div>
+            <div class="ldg-val v-rose" id="lblAfp">-$0.00</div>
+          </div>
+          <div class="ldg-row">
+            <div class="ldg-lbl">Retención ISR<small id="descIsr">—</small></div>
+            <div class="ldg-val v-rose" id="lblIsr">-$0.00</div>
+          </div>
+
+          <div class="ldg-total">
+            <span>Monto Neto a Pagar</span>
+            <span class="ldg-val" id="lblNeto">$0.00</span>
+          </div>
+        </div>
+
+        <div class="base-legal">
+          <strong>📚 Base legal</strong>
+          Arts. 177, 187 CT – Vacaciones · Arts. 196-198 CT – Aguinaldo · Art. 58 CT – Indemnización/Compensación · Art. 169 CT – Horas extraordinarias · Art. 192 CT – Asuetos · Arts. 175-176 CT – Descanso semanal · Art. 29 Regl. ISSS · Ley SAP – AFP · Art. 37 Ley ISR
+        </div>
+
+        <button class="export-btn" id="exportBtn" onclick="printComprobante()">
+          🖨️ Exportar Comprobante en PDF
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ── COMPROBANTE (solo visible al imprimir) ──────────── -->
+  <div id="printCard" class="card">
+    <div class="print-header">
+      <h1>Comprobante de Liquidación de Prestaciones Laborales</h1>
+      <p>República de El Salvador</p>
     </div>
 
-    <script>
-        // Cambio de pestañas principal
-        function cambiarVista(vista) {
-            const vistas = ['vistaCalculadora', 'vistaHistorial', 'vistaSimuladorTributario', 'vistaDocumentosLegales', 'vistaDocumentacion'];
-            const botones = ['btnTabCalc', 'btnTabHist', 'btnTabSim', 'btnTabDocs', 'btnTabDoc'];
-            
-            const mapa = {
-                'calculadora': 0,
-                'historial': 1,
-                'simuladorTributario': 2,
-                'documentosLegales': 3,
-                'documentacion': 4
-            };
+    <div class="print-section-title">I. Datos de las partes</div>
+    <table class="ptable">
+      <tr>
+        <th>Persona trabajadora</th><td id="pNombre">—</td>
+        <th>Patrono</th><td id="pPatrono">—</td>
+      </tr>
+      <tr>
+        <th>Cargo desempeñado</th><td id="pCargo">—</td>
+        <th>Salario mensual</th><td id="pSalario">—</td>
+      </tr>
+      <tr>
+        <th>Fecha de ingreso</th><td id="pIngreso">—</td>
+        <th>Fecha de terminación</th><td id="pTermino">—</td>
+      </tr>
+      <tr>
+        <th>Antigüedad reconocida</th><td id="pAntigüedad">—</td>
+        <th>Causa de terminación</th><td id="pCausa">—</td>
+      </tr>
+    </table>
 
-            vistas.forEach((v, idx) => {
-                const el = document.getElementById(v);
-                const btn = document.getElementById(botones[idx]);
-                if (idx === mapa[vista]) {
-                    el.classList.remove('hidden');
-                    btn.className = 'px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow transition';
-                } else {
-                    el.classList.add('hidden');
-                    btn.className = 'px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition';
-                }
-            });
+    <div class="print-section-title">II. Desglose de prestaciones liquidadas</div>
+    <table class="ptable">
+      <thead>
+        <tr><th>Concepto</th><th>Base legal</th><th class="right">Monto</th></tr>
+      </thead>
+      <tbody id="pDesglose"></tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2"><strong>TOTAL DEVENGADO (BRUTO)</strong></td>
+          <td class="right" id="pBrutoTotal">$0.00</td>
+        </tr>
+      </tfoot>
+    </table>
 
-            if (vista === 'historial') renderizarHistorial();
-            if (vista === 'simuladorTributario') ejecutarSimulacionFiscal();
-        }
+    <div class="print-section-title">III. Deducciones de ley y neto a pagar</div>
+    <div id="pDeduccionesNota" style="font-size:.79rem; margin-bottom:8px;"></div>
+    <table class="ptable">
+      <tbody id="pDeducciones"></tbody>
+      <tfoot>
+        <tr class="total-row">
+          <td colspan="2"><strong>MONTO NETO A PAGAR</strong></td>
+          <td class="right" id="pNetoTotal">$0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+    <p style="margin-top:8px; font-size:.8rem; font-weight:700;" id="pNetoLetras"></p>
 
-        function cambiarTipoDoc(tipo) {
-            const ren = document.getElementById('plantillaRenuncia');
-            const fin = document.getElementById('plantillaFiniquito');
-            const btnRen = document.getElementById('btnDocRenuncia');
-            const btnFin = document.getElementById('btnDocFiniquito');
+    <div class="print-section-title">IV. Declaración</div>
+    <p id="pDeclaracion" style="font-size:.79rem; line-height:1.6; margin-bottom:14px;"></p>
 
-            if (tipo === 'renuncia') {
-                ren.classList.remove('hidden');
-                fin.classList.add('hidden');
-                btnRen.className = 'px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow text-sm';
-                btnFin.className = 'px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow text-sm';
-            } else {
-                ren.classList.add('hidden');
-                fin.classList.remove('hidden');
-                btnFin.className = 'px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow text-sm';
-                btnRen.className = 'px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow text-sm';
-            }
-        }
+    <div class="print-sig">
+      <div class="sig-block">
+        <strong>Persona trabajadora</strong>
+        <p>Nombre: ________________________________</p>
+        <p>DUI: ___________________________________</p>
+        <p>Fecha: _________________________________</p>
+      </div>
+      <div class="sig-block">
+        <strong>Patrono o representante legal</strong>
+        <p>Nombre: ________________________________</p>
+        <p>DUI: ___________________________________</p>
+        <p>Fecha: _________________________________</p>
+      </div>
+    </div>
 
-        function cargarEjemplo() {
-            document.getElementById('nombreTrabajador').value = 'Ana María Rivas';
-            document.getElementById('duiTrabajador').value = '02849102-5';
-            document.getElementById('nombreEmpresa').value = 'Comercializadora del Pacífico S.A. de C.V.';
-            document.getElementById('salarioMensual').value = '850.00';
-            document.getElementById('anosLaborados').value = '3';
-            document.getElementById('mesesLaborados').value = '4';
-            document.getElementById('diasLaborados').value = '10';
-            calcularPrestaciones();
-        }
+    <div class="print-warn">
+      <strong>⚠️ Advertencia legal</strong>
+      Este documento es un comprobante informativo del cálculo de prestaciones y NO constituye el finiquito laboral. Conforme al Art. 402 inciso 2 del Código de Trabajo, la renuncia, la terminación por mutuo consentimiento o el recibo de pago de prestaciones por despido sin causa legal solo tienen valor probatorio si constan en hojas extendidas por la Dirección General de Inspección de Trabajo o por los jueces con competencia en materia laboral, utilizadas dentro de los diez días siguientes a su expedición, o bien en documento privado autenticado ante notario. Se recomienda asesoría legal profesional antes de suscribir cualquier finiquito.
+    </div>
 
-        // Conversor de número a letras en español
-        function numeroALetras(num) {
-            const unidades = ['', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte'];
-            const decenas = ['', '', 'veinti', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
-            const centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+    <div class="print-footer" id="pFooter"></div>
+  </div>
 
-            function convertirGrupo(n) {
-                let salida = '';
-                if (n === 100) return 'cien';
-                if (n > 100) {
-                    salida += centenas[Math.floor(n / 100)] + ' ';
-                    n %= 100;
-                }
-                if (n <= 20) {
-                    salida += unidades[n];
-                } else {
-                    let d = Math.floor(n / 10);
-                    let u = n % 10;
-                    if (d === 2) {
-                        salida += 'veinti' + unidades[u];
-                    } else {
-                        salida += decenas[d];
-                        if (u > 0) salida += ' y ' + unidades[u];
-                    }
-                }
-                return salida.trim();
-            }
+  <footer>
+    Calculadora de Prestaciones Laborales · LAB 2 · Derecho Empresarial e Informático · UGB 2026 · Conforme al Código de Trabajo de El Salvador
+  </footer>
+</div>
 
-            let entero = Math.floor(num);
-            let centavos = Math.round((num - entero) * 100);
-            let centavosStr = (centavos < 10 ? '0' : '') + centavos;
+<script>
+/* ============================================================
+   LOGICA – PRESTACIONES LABORALES EL SALVADOR
+   Codigo de Trabajo (CT) vigente
+   Actualizado segun pizarra de clase:
+   - Despido justificado vs injustificado
+   - Vacaciones desde fecha de ultima vacacion gozada
+   - Lista de asuetos nacionales con checkboxes
+   - Preaviso en renuncia voluntaria
+   ============================================================ */
 
-            if (entero === 0) return `Son: cero dólares con ${centavosStr}/100 USD`;
+const fmt  = v => new Intl.NumberFormat('es-SV',{style:'currency',currency:'USD'}).format(v||0);
+const fmtN = v => Number(v).toFixed(2);
+const g    = id => document.getElementById(id);
+const num  = id => Math.max(0, parseFloat(g(id).value)||0);
 
-            let letras = '';
-            let millones = Math.floor(entero / 1000000);
-            let miles = Math.floor((entero % 1000000) / 1000);
-            let resto = entero % 1000;
+/* Constantes legales */
+const ISSS_RATE = 0.03, ISSS_TOPE = 1000;
+const AFP_RATE  = 0.0725, AFP_TOPE = 6523.20;
+const ISR_TABLA = [
+  {desde:0,      hasta:487,     cuota:0,      tasa:0,    sobre:0},
+  {desde:487.01, hasta:896,     cuota:17.67,  tasa:0.10, sobre:487.01},
+  {desde:896.01, hasta:2038.10, cuota:58.57,  tasa:0.20, sobre:896.01},
+  {desde:2038.11,hasta:Infinity,cuota:286.61, tasa:0.30, sobre:2038.11}
+];
+function calcISR(b){ const t=ISR_TABLA.find(x=>b>=x.desde&&b<=x.hasta); return(!t||!t.tasa)?0:Math.round((t.cuota+(b-t.sobre)*t.tasa)*100)/100; }
+function aguinaldoDias(a){ return a<3?15:a<=10?19:21; }
 
-            if (millones > 0) {
-                if (millones === 1) letras += 'un millón ';
-                else letras += convertirGrupo(millones) + ' millones ';
-            }
-            if (miles > 0) {
-                if (miles === 1) letras += 'mil ';
-                else letras += convertirGrupo(miles) + ' mil ';
-            }
-            if (resto > 0) {
-                letras += convertirGrupo(resto) + ' ';
-            }
+/* Asuetos nacionales El Salvador (Art. 190 CT) */
+const ASUETOS_SV = [
+  {id:'asv01',nombre:'1 enero – Año Nuevo'},
+  {id:'asv02',nombre:'Jueves Santo'},
+  {id:'asv03',nombre:'Viernes Santo'},
+  {id:'asv04',nombre:'Sabado de Gloria'},
+  {id:'asv05',nombre:'1 mayo – Dia del Trabajo'},
+  {id:'asv06',nombre:'10 mayo – Dia de la Madre'},
+  {id:'asv07',nombre:'17 junio – Dia del Padre'},
+  {id:'asv08',nombre:'3 agosto – Fiestas Agostinas'},
+  {id:'asv09',nombre:'4 agosto – Fiestas Agostinas'},
+  {id:'asv10',nombre:'5 agosto – Fiestas Agostinas'},
+  {id:'asv11',nombre:'15 sept – Independencia'},
+  {id:'asv12',nombre:'2 nov – Dia de Difuntos'},
+  {id:'asv13',nombre:'5 nov – Primer Grito'},
+  {id:'asv14',nombre:'25 dic – Navidad'}
+];
 
-            letras = letras.trim();
-            letras = letras.charAt(0).toUpperCase() + letras.slice(1);
-            return `Son: ${letras} dólares con ${centavosStr}/100 USD`;
-        }
+/* Render lista de asuetos */
+(function renderAsuetos(){
+  const grid = g('asuetoGrid');
+  if(!grid) return;
+  grid.innerHTML = ASUETOS_SV.map(a=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;
+      border:1.5px solid var(--border);cursor:pointer;font-size:.77rem;font-weight:500;
+      background:var(--bg-card);transition:all .15s;user-select:none;" for="${a.id}">
+      <input type="checkbox" id="${a.id}" name="asueto" value="1" style="width:15px;height:15px;accent-color:#d97706;cursor:pointer;" onchange="calculate()">
+      ${a.nombre}
+    </label>`).join('');
+})();
 
-        // Cálculo de Renta MH El Salvador
-        function calcularRentaSV(sujetoRenta) {
-            let renta = 0;
-            if (sujetoRenta > 472.00 && sujetoRenta <= 895.24) {
-                renta = (sujetoRenta - 472.00) * 0.10 + 17.50;
-            } else if (sujetoRenta > 895.24 && sujetoRenta <= 2038.10) {
-                renta = (sujetoRenta - 895.24) * 0.20 + 60.00;
-            } else if (sujetoRenta > 2038.10) {
-                renta = (sujetoRenta - 2038.10) * 0.30 + 288.57;
-            }
-            return Math.max(0, renta);
-        }
+function countAsuetos(){
+  return document.querySelectorAll('input[name="asueto"]:checked').length;
+}
 
-        // Función Principal de Cálculo de Liquidación
-        let ultimoCalculoCache = null;
+/* UI: Cierre tipo */
+function updateCierreUI(){
+  const tipo = (document.querySelector('input[name="tipoCierre"]:checked')||{}).value||'despido_injusto';
+  const box  = g('boxFormulaCierre');
+  g('sectionPreaviso').style.display = tipo==='renuncia'?'block':'none';
+  if(tipo==='despido_injusto'){
+    box.innerHTML = '<div style="padding:11px 14px;border-radius:8px;background:var(--blue-light);border-left:3px solid var(--blue);font-size:.8rem;color:var(--blue);"><strong style="display:block;margin-bottom:4px;">📐 Indemnizacion por despido injustificado (Art. 58 CT)</strong><code style="font-family:var(--mono);background:var(--bg-card);padding:1px 5px;border-radius:3px;font-size:.71rem;">Años totales × 30 dias × Salario diario</code> | Salario diario = Ingreso mensual ÷ 30</div>';
+  } else if(tipo==='despido_justo'){
+    box.innerHTML = '<div style="padding:11px 14px;border-radius:8px;background:rgba(225,29,72,.07);border-left:3px solid #e11d48;font-size:.8rem;color:#e11d48;"><strong style="display:block;margin-bottom:4px;">⚠️ Despido justificado (Art. 50 CT)</strong>El patrono NO paga indemnizacion cuando existe causa legal debidamente comprobada. Solo se liquidan vacacion, aguinaldo y jornadas especiales.</div>';
+  } else {
+    box.innerHTML = '<div style="padding:11px 14px;border-radius:8px;background:rgba(5,150,105,.08);border-left:3px solid #059669;font-size:.8rem;color:#059669;"><strong style="display:block;margin-bottom:4px;">📋 Renuncia voluntaria (Art. 58 CT, parrafo final)</strong><strong>≥ 4 años:</strong> compensacion de 15 dias por año. <strong>&lt; 4 años:</strong> no corresponde compensacion economica.</div>';
+  }
+  calculate();
+}
+document.querySelectorAll('input[name="tipoCierre"]').forEach(r=>r.addEventListener('change',updateCierreUI));
 
-        function calcularPrestaciones() {
-            const nombre = document.getElementById('nombreTrabajador').value || 'Sin nombre';
-            const dui = document.getElementById('duiTrabajador').value || '00000000-0';
-            const empresa = document.getElementById('nombreEmpresa').value || 'Empresa';
-            const salarioMensual = parseFloat(document.getElementById('salarioMensual').value) || 0;
-            const anos = parseInt(document.getElementById('anosLaborados').value) || 0;
-            const meses = parseInt(document.getElementById('mesesLaborados').value) || 0;
-            const dias = parseInt(document.getElementById('diasLaborados').value) || 0;
-            const vacacionesPagadas = document.getElementById('vacacionesPagadas').value;
-            const tipoCierre = document.getElementById('tipoCierre').value;
-            
-            const hDiurnas = parseFloat(document.getElementById('horasExtrasDiurnas').value) || 0;
-            const hNocturnas = parseFloat(document.getElementById('horasExtrasNocturnas').value) || 0;
-            const diasAsueto = parseFloat(document.getElementById('diasAsueto').value) || 0;
-            const diasDescanso = parseFloat(document.getElementById('diasDescanso').value) || 0;
+/* Toggle asuetos */
+g('toggleSinAsueto').addEventListener('click',()=>{
+  const el = g('toggleSinAsueto');
+  el.classList.toggle('on');
+  const off = el.classList.contains('on');
+  g('asuetosSection').style.display = off?'none':'block';
+  if(off) document.querySelectorAll('input[name="asueto"]').forEach(c=>c.checked=false);
+  calculate();
+});
 
-            const salarioDiario = salarioMensual / 30.0;
-            const salarioHoraNormal = salarioDiario / 8.0;
-            const totalMesesDecimal = anos * 12 + meses + (dias / 30.0);
+/* Toggle horas extras */
+g('toggleNoAplica').addEventListener('click',()=>{
+  const el = g('toggleNoAplica');
+  el.classList.toggle('on');
+  const off = el.classList.contains('on');
+  g('hextSection').style.display = off?'none':'block';
+  if(off){g('hExtDiurnas').value=0;g('hExtNocturnas').value=0;g('diasDescanso').value=0;}
+  calculate();
+});
 
-            // 1. Vacaciones Proporcionales con Prima del 30%
-            let vacacionTotalAcumulada = 0;
-            if (vacacionesPagadas === 'no') {
-                const valor15DiasVacaciones = salarioDiario * 15;
-                const primaVacacional = valor15DiasVacaciones * 0.30;
-                const totalAnualVacaciones = valor15DiasVacaciones + primaVacacional;
-                const montoVacacionCalculado = (totalAnualVacaciones / 12.0) * meses + (totalAnualVacaciones / 365.0) * dias; 
-                vacacionTotalAcumulada = (anos * totalAnualVacaciones) + montoVacacionCalculado;
-            }
+/* Calculo principal */
+function calculate(){
+  const salario    = num('salario');
+  const anios      = Math.floor(num('anios'));
+  const mesesRaw   = Math.min(11, Math.floor(num('meses')));
+  const tipo       = (document.querySelector('input[name="tipoCierre"]:checked')||{}).value||'despido_injusto';
+  const hExtD      = num('hExtDiurnas');
+  const hExtN      = num('hExtNocturnas');
+  const dDesc      = Math.floor(num('diasDescanso'));
+  const sinAsueto  = g('toggleSinAsueto').classList.contains('on');
+  const sinHExt    = g('toggleNoAplica').classList.contains('on');
+  const dAsue      = sinAsueto ? 0 : countAsuetos();
 
-            // 2. Aguinaldo Proporcional
-            let diasAguinaldo = 15;
-            if (anos >= 3 && anos < 10) diasAguinaldo = 19;
-            else if (anos >= 10) diasAguinaldo = 21;
-            const aguinaldoAnualCompleto = salarioDiario * diasAguinaldo;
-            const aguinaldoProporcional = (aguinaldoAnualCompleto / 12.0) * meses + (aguinaldoAnualCompleto / 365.0) * dias;
+  const mesesTotales = anios*12 + mesesRaw;
+  g('antiguedadHint').textContent = `Antiguedad: ${anios} año${anios!==1?'s':''} y ${mesesRaw} mes${mesesRaw!==1?'es':''}`;
+  if(g('asuetoCount')) g('asuetoCount').textContent = `${dAsue} dia${dAsue!==1?'s':''} de asueto seleccionado${dAsue!==1?'s':''}`;
 
-            // 3. Indemnización (Art. 58 CT)
-            let montoIndemnizacion = 0;
-            if (tipoCierre === 'despido') {
-                const indAnual = salarioDiario * 30 * anos;
-                const indFraccion = salarioDiario * 30 * ((meses * 30 + dias) / 365.0);
-                montoIndemnizacion = indAnual + indFraccion;
-                const minimoLegal = salarioDiario * 15;
-                if (montoIndemnizacion < minimoLegal && totalMesesDecimal > 0) {
-                    montoIndemnizacion = minimoLegal;
-                }
-            }
+  const salDiario     = salario/30;
+  const horaOrdDiurna = salDiario/8;
+  const horaOrdNoct   = horaOrdDiurna*1.25;
 
-            // 4. Horas Extras y Asuetos
-            const subtotalHEsDiurnas = (salarioHoraNormal * 2.0) * hDiurnas;
-            const subtotalHEsNocturnas = (salarioHoraNormal * 2.25) * hNocturnas;
-            const montoAsuetos = (salarioDiario * 2.0) * diasAsueto;
-            const montoDescanso = (salarioDiario * 2.0) * diasDescanso;
+  /* 1. VACACIONES: desde fecha de ultima vacacion hasta terminacion */
+  let vacacion=0, diasVac=0, mesesVac=0;
+  const fUltVac = g('ultimaVacacion').value ? new Date(g('ultimaVacacion').value+'T00:00:00') : null;
+  const fTerm   = g('fechaTermino').value   ? new Date(g('fechaTermino').value+'T00:00:00')   : null;
+  if(fUltVac && fTerm && fTerm > fUltVac){
+    const diffDias = Math.floor((fTerm - fUltVac)/(1000*60*60*24));
+    mesesVac = Math.floor(diffDias/30.44);
+    diasVac  = (Math.min(mesesVac,12)/12)*15;
+    vacacion = Math.round(diasVac*salDiario*1.30*100)/100;
+    g('hintVacaciones').textContent = `${mesesVac} meses desde ultima vacacion -> ${fmtN(diasVac)} dias proporcionales + 30% prima`;
+    g('infoVacResult').innerHTML = `<strong>Vacacion proporcional:</strong> ${fmtN(diasVac)} dias x ${fmt(salDiario)}/dia + 30% prima = <strong>${fmt(vacacion)}</strong> (Arts. 177, 187 CT)`;
+  } else {
+    g('hintVacaciones').textContent = 'Ingresa una fecha anterior a la de terminacion.';
+    g('infoVacResult').innerHTML = '<em>Ingresa la fecha de la ultima vacacion gozada para calcular.</em>';
+  }
 
-            const montoBruto = vacacionTotalAcumulada + aguinaldoProporcional + montoIndemnizacion + 
-                               subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso;
+  /* 2. AGUINALDO proporcional */
+  const diasAgui  = aguinaldoDias(anios);
+  const mesesAgui = mesesTotales%12;
+  const aguinaldo = Math.round((mesesAgui/12)*diasAgui*salDiario*100)/100;
 
-            // Deducciones de Ley
-            const baseGravableSocial = (subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso) + (salarioMensual > 0 ? salarioMensual : 0);
-            const montoISSS = Math.min(baseGravableSocial, 1000.00) * 0.03;
-            const montoAFP = baseGravableSocial * 0.0725;
-            const montoRenta = calcularRentaSV(montoBruto - (montoISSS + montoAFP));
+  /* 3. COMPENSACION segun tipo */
+  let compensacion=0, labelComp='', descComp='';
+  const totalAniosDec = anios + mesesRaw/12;
+  if(tipo==='despido_injusto'){
+    const diasIndem = totalAniosDec*30;
+    compensacion = Math.round(diasIndem*salDiario*100)/100;
+    labelComp    = 'Indemnizacion por despido injustificado';
+    descComp     = `${fmtN(totalAniosDec)} años x 30 dias x ${fmt(salDiario)}/dia (Art. 58 CT)`;
+  } else if(tipo==='despido_justo'){
+    compensacion = 0;
+    labelComp    = 'Compensacion (despido justificado)';
+    descComp     = 'No corresponde indemnizacion – causa legal comprobada (Art. 50 CT)';
+  } else {
+    if(anios>=4){
+      const diasComp = totalAniosDec*15;
+      compensacion   = Math.round(diasComp*salDiario*100)/100;
+      labelComp      = 'Compensacion economica (renuncia ≥4 años)';
+      descComp       = `${fmtN(totalAniosDec)} años x 15 dias x ${fmt(salDiario)}/dia (Art. 58 CT)`;
+    } else {
+      compensacion = 0;
+      labelComp    = 'Compensacion economica (renuncia <4 años)';
+      descComp     = 'Menos de 4 años continuos -> no corresponde compensacion (Art. 58 CT)';
+    }
+  }
 
-            const totalDeducciones = montoISSS + montoAFP + montoRenta;
-            const montoTotalNeto = Math.max(0, montoBruto - totalDeducciones);
-            const letrasTotal = numeroALetras(montoTotalNeto);
-            const fechaActualStr = new Date().toLocaleDateString('es-SV', { year: 'numeric', month: 'long', day: 'numeric' });
-            const folioUnico = 'SV-LIQ-' + Math.floor(100000 + Math.random() * 900000);
+  /* 4. HORAS EXTRAS */
+  const subHD   = sinHExt ? 0 : Math.round(hExtD*(horaOrdDiurna*2)*100)/100;
+  const subHN   = sinHExt ? 0 : Math.round(hExtN*(horaOrdNoct*2)*100)/100;
 
-            // Cache para Historial y PDF
-            ultimoCalculoCache = {
-                fecha: fechaActualStr,
-                folio: folioUnico,
-                nombre, dui, empresa, salarioMensual, anos, meses, dias,
-                tipoCierre: tipoCierre === 'despido' ? 'Despido Injustificado' : 'Renuncia Voluntaria',
-                vacacionTotalAcumulada, aguinaldoProporcional, montoIndemnizacion,
-                subtotalHEsDiurnas, subtotalHEsNocturnas, montoAsuetos, montoDescanso,
-                montoBruto, montoISSS, montoAFP, montoRenta, montoTotalNeto, letrasTotal
-            };
+  /* 5. ASUETOS */
+  const subAsue = Math.round(dAsue*salDiario*2*100)/100;
 
-            // Rellenar UI resultados
-            document.getElementById('resVacaciones').innerText = `$${vacacionTotalAcumulada.toFixed(2)}`;
-            document.getElementById('resAguinaldo').innerText = `$${aguinaldoProporcional.toFixed(2)}`;
-            document.getElementById('resIndemnizacion').innerText = `$${montoIndemnizacion.toFixed(2)}`;
-            document.getElementById('resHEsDiurnas').innerText = `$${subtotalHEsDiurnas.toFixed(2)}`;
-            document.getElementById('resHEsNocturnas').innerText = `$${subtotalHEsNocturnas.toFixed(2)}`;
-            document.getElementById('resAsuetos').innerText = `$${montoAsuetos.toFixed(2)}`;
-            document.getElementById('resDescanso').innerText = `$${montoDescanso.toFixed(2)}`;
-            document.getElementById('resBruto').innerText = `$${montoBruto.toFixed(2)}`;
-            
-            document.getElementById('resISSS').innerText = `-$${montoISSS.toFixed(2)}`;
-            document.getElementById('resAFP').innerText = `-$${montoAFP.toFixed(2)}`;
-            document.getElementById('resRenta').innerText = `-$${montoRenta.toFixed(2)}`;
-            document.getElementById('resTotalNeto').innerText = `$${montoTotalNeto.toFixed(2)}`;
-            document.getElementById('resMontoLetras').innerText = letrasTotal;
+  /* 6. DESCANSO SEMANAL */
+  const subDesc = sinHExt ? 0 : Math.round(dDesc*salDiario*2*100)/100;
 
-            // Rellenar Comprobante Imprimible
-            document.getElementById('vFolio').innerText = folioUnico;
-            document.getElementById('vFecha').innerText = fechaActualStr;
-            document.getElementById('vEmpresa').innerText = empresa;
-            document.getElementById('vNombre').innerText = nombre;
-            document.getElementById('vDui').innerText = dui;
-            document.getElementById('vSalario').innerText = `$${salarioMensual.toFixed(2)}`;
-            document.getElementById('vTiempo').innerText = `${anos} años, ${meses} meses, ${dias} días`;
-            document.getElementById('vCausa').innerText = tipoCierre === 'despido' ? 'Despido Injustificado (Art. 58 CT)' : 'Renuncia Voluntaria';
+  /* TOTAL BRUTO */
+  const totalBruto = vacacion+aguinaldo+compensacion+subHD+subHN+subAsue+subDesc;
 
-            // Desglose dinámico en comprobante
-            const desgloseContainer = document.getElementById('vDesgloseContainer');
-            desgloseContainer.innerHTML = `
-                <div class="flex justify-between border-b py-1"><span>Vacaciones y Prima:</span> <span>$${vacacionTotalAcumulada.toFixed(2)}</span></div>
-                <div class="flex justify-between border-b py-1"><span>Aguinaldo Proporcional:</span> <span>$${aguinaldoProporcional.toFixed(2)}</span></div>
-                <div class="flex justify-between border-b py-1"><span>Indemnización Laboral:</span> <span>$${montoIndemnizacion.toFixed(2)}</span></div>
-                <div class="flex justify-between border-b py-1"><span>Horas Extras y Asuetos:</span> <span>$${(subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso).toFixed(2)}</span></div>
-                <div class="flex justify-between border-b py-1 text-red-600"><span>Deducciones (ISSS, AFP, Renta):</span> <span>-$${totalDeducciones.toFixed(2)}</span></div>
-            `;
-            document.getElementById('vTotalNeto').innerText = `$${montoTotalNeto.toFixed(2)}`;
-            document.getElementById('vMontoLetras').innerText = letrasTotal;
+  /* DEDUCCIONES – indemnizacion y aguinaldo exentos */
+  const baseGravada = vacacion+subHD+subHN+subAsue+subDesc;
+  const exento      = aguinaldo+compensacion;
+  const isssBase = Math.min(baseGravada,ISSS_TOPE);
+  const isss     = Math.round(isssBase*ISSS_RATE*100)/100;
+  const afpBase  = Math.min(baseGravada,AFP_TOPE);
+  const afp      = Math.round(afpBase*AFP_RATE*100)/100;
+  const baseISR  = Math.max(0,baseGravada-isss-afp);
+  const isr      = calcISR(baseISR);
+  const totalDed = isss+afp+isr;
+  const neto     = Math.max(0,Math.round((totalBruto-totalDed)*100)/100);
 
-            // Sincronizar documentos legales
-            document.getElementById('docFechaRenuncia').innerText = fechaActualStr;
-            document.getElementById('docEmpresaRenuncia').innerText = empresa;
-            document.getElementById('docNombreRenuncia').innerText = nombre;
-            document.getElementById('docDuiRenuncia').innerText = dui;
+  /* RENDER */
+  g('lblBruto').textContent    = fmt(totalBruto);
+  g('lblDedTotal').textContent = `-${fmt(totalDed)}`;
+  g('lblNetoHero').textContent = fmt(neto);
+  g('lblNombreResult').textContent = g('nombreTrabajador').value||'—';
+  g('lblNeto').textContent     = fmt(neto);
 
-            document.getElementById('docFechaFiniquito').innerText = fechaActualStr;
-            document.getElementById('docEmpresaFiniquito').innerText = empresa;
-            document.getElementById('docNombreFiniquito').innerText = nombre;
-            document.getElementById('docDuiFiniquito').innerText = dui;
-            document.getElementById('docMontoFiniquito').innerText = `$${montoTotalNeto.toFixed(2)}`;
+  setRow('lblVacacion','descVacacion',vacacion,
+    diasVac>0 ? `${fmtN(diasVac)} dias x ${fmt(salDiario)}/dia + 30% prima (${mesesVac} mes${mesesVac!==1?'es':''})` : 'Sin calculo de vacacion');
+  setRow('lblAguinaldo','descAguinaldo',aguinaldo,
+    mesesAgui>0 ? `${fmtN((mesesAgui/12)*diasAgui)} dias x ${fmt(salDiario)}/dia (base ${diasAgui}d, ${mesesAgui} mes${mesesAgui!==1?'es':''})` : 'Sin fraccion en periodo');
+  g('lblCompLabel').textContent = labelComp;
+  setRow('lblComp','descComp',compensacion,descComp);
+  setRow('lblHD','descHD',subHD, sinHExt?'No aplica':`${hExtD}h x ${fmt(horaOrdDiurna*2)}/h`);
+  setRow('lblHN','descHN',subHN, sinHExt?'No aplica':`${hExtN}h x ${fmt(horaOrdNoct*2)}/h`);
+  setRow('lblAsue','descAsue',subAsue, sinAsueto?'No aplica':`${dAsue} dia${dAsue!==1?'s':''} x ${fmt(salDiario*2)}/dia`);
+  setRow('lblDesc','descDesc',subDesc, sinHExt?'No aplica':`${dDesc} dias x ${fmt(salDiario*2)}/dia`);
+  setRow('lblIsss','descIsss',isss,`Base: ${fmt(isssBase)} x 3% (Regl. ISSS Art. 29)`,true);
+  setRow('lblAfp','descAfp',afp,`Base: ${fmt(afpBase)} x 7.25% (Ley SAP)`,true);
+  setRow('lblIsr','descIsr',isr,`Base gravable: ${fmt(baseISR)} | Exento: ${fmt(exento)}`,true);
 
-            document.getElementById('panelResultados').classList.remove('hidden');
-            document.getElementById('panelComprobante').classList.remove('hidden');
-        }
+  g('hintDiurnas').textContent  = `Hora ord. diurna: ${fmt(horaOrdDiurna)} -> extra: ${fmt(horaOrdDiurna*2)}`;
+  g('hintNocturnas').textContent= `Hora ord. noct.: ${fmt(horaOrdNoct)} -> extra: ${fmt(horaOrdNoct*2)}`;
 
-        // Historial Local con LocalStorage
-        function guardarLiquidacionHistorial() {
-            if (!ultimoCalculoCache) {
-                calcularPrestaciones();
-            }
-            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
-            historial.unshift(ultimoCalculoCache);
-            if (historial.length > 20) historial.pop(); // Mantener últimos 20
-            localStorage.setItem('historialLiquidacionesSV', JSON.stringify(historial));
-            alert('Liquidación guardada correctamente en el historial local.');
-        }
+  window._state = {
+    nombre:g('nombreTrabajador').value, patrono:g('patrono').value, cargo:g('cargo').value,
+    salario, ingreso:g('fechaIngreso').value, termino:g('fechaTermino').value,
+    anios, mesesRaw, tipo, vacacion, aguinaldo, compensacion, labelComp,
+    subHD, subHN, subAsue, subDesc, totalBruto, isss, afp, isr, totalDed, neto, baseGravada, exento
+  };
+}
 
-        function renderizarHistorial() {
-            const tbody = document.getElementById('tablaHistorialBody');
-            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
-            if (historial.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay liquidaciones guardadas en el historial.</td></tr>`;
-                return;
-            }
-            tbody.innerHTML = historial.map((item, idx) => `
-                <tr class="hover:bg-slate-50">
-                    <td class="p-3">${item.fecha}</td>
-                    <td class="p-3 font-semibold">${item.nombre}</td>
-                    <td class="p-3">${item.empresa}</td>
-                    <td class="p-3">$${item.salarioMensual.toFixed(2)}</td>
-                    <td class="p-3 font-bold text-blue-900">$${item.montoTotalNeto.toFixed(2)}</td>
-                    <td class="p-3">
-                        <button onclick="cargarHistorialItem(${idx})" class="text-blue-600 hover:underline mr-2 font-semibold">Cargar</button>
-                        <button onclick="eliminarHistorialItem(${idx})" class="text-red-600 hover:underline font-semibold">Eliminar</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
+function setRow(lId,dId,val,desc,isDed=false){
+  const el=g(lId);
+  el.textContent = isDed?`-${fmt(val)}`:fmt(val);
+  el.className   = 'ldg-val '+(val===0?'v-zero':isDed?'v-rose':'v-emerald');
+  g(dId).textContent = desc;
+}
 
-        function cargarHistorialItem(idx) {
-            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
-            const item = historial[idx];
-            if (!item) return;
-            document.getElementById('nombreTrabajador').value = item.nombre;
-            document.getElementById('duiTrabajador').value = item.dui;
-            document.getElementById('nombreEmpresa').value = item.empresa;
-            document.getElementById('salarioMensual').value = item.salarioMensual;
-            document.getElementById('anosLaborados').value = item.anos;
-            document.getElementById('mesesLaborados').value = item.meses;
-            document.getElementById('diasLaborados').value = item.dias;
-            cambiarVista('calculadora');
-            calcularPrestaciones();
-        }
+/* Numero a letras */
+function numLetras(n){
+  const un=['','UNO','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE',
+    'DIEZ','ONCE','DOCE','TRECE','CATORCE','QUINCE','DIECISEIS','DIECISIETE','DIECIOCHO','DIECINUEVE'];
+  const de=['','','VEINTE','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+  const ce=['','CIEN','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS',
+    'SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+  function t(x){if(!x)return'';if(x<20)return un[x];if(x<100){const d=Math.floor(x/10),u=x%10;return de[d]+(u?' Y '+un[u]:'');}if(x===100)return'CIEN';const c=Math.floor(x/100),r=x%100;return ce[c]+(r?' '+t(r):'');}
+  const ent=Math.floor(n),cts=Math.round((n-ent)*100);
+  let s=ent>=1000?(()=>{const m=Math.floor(ent/1000),r=ent%1000;return(m===1?'MIL':t(m)+' MIL')+(r?' '+t(r):'');})():t(ent)||'CERO';
+  return s+' '+String(cts).padStart(2,'0')+'/100 DOLARES DE LOS ESTADOS UNIDOS DE AMERICA';
+}
 
-        function eliminarHistorialItem(idx) {
-            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
-            historial.splice(idx, 1);
-            localStorage.setItem('historialLiquidacionesSV', JSON.stringify(historial));
-            renderizarHistorial();
-        }
+/* Imprimir */
+function printComprobante(){
+  const s=window._state; if(!s){alert('Calcula primero.');return;}
+  const fh=new Date().toLocaleDateString('es-SV',{day:'2-digit',month:'2-digit',year:'numeric'});
+  g('pNombre').textContent=s.nombre||'—'; g('pPatrono').textContent=s.patrono||'—';
+  g('pCargo').textContent=s.cargo||'—';   g('pSalario').textContent=fmt(s.salario);
+  g('pIngreso').textContent=s.ingreso||'—'; g('pTermino').textContent=s.termino||'—';
+  g('pAntigüedad').textContent=`${s.anios} años, ${s.mesesRaw} meses`;
+  const cm={despido_injusto:'Despido sin causa justificada',despido_justo:'Despido con causa justificada',renuncia:'Renuncia voluntaria'};
+  g('pCausa').textContent=cm[s.tipo]||s.tipo;
+  const rows=[
+    {c:'Vacacion proporcional',         l:'Arts. 177 y 187 CT',  v:s.vacacion},
+    {c:'Aguinaldo proporcional',         l:'Arts. 196-198 CT',   v:s.aguinaldo},
+    {c:s.labelComp,                     l:'Art. 58 CT',         v:s.compensacion},
+    {c:'Horas extras diurnas',          l:'Art. 169 CT',        v:s.subHD},
+    {c:'Horas extras nocturnas',        l:'Arts. 168 y 169 CT', v:s.subHN},
+    {c:'Dias de asueto laborados',      l:'Art. 192 CT',        v:s.subAsue},
+    {c:'Dias de descanso semanal',      l:'Arts. 175 y 176 CT', v:s.subDesc}
+  ].filter(r=>r.v>0);
+  g('pDesglose').innerHTML=rows.map(r=>`<tr><td>${r.c}</td><td>${r.l}</td><td class="right">${fmt(r.v)}</td></tr>`).join('');
+  g('pBrutoTotal').textContent=fmt(s.totalBruto);
+  g('pDeduccionesNota').textContent=`Remuneracion gravada: ${fmt(s.baseGravada)}. Exento: ${fmt(s.exento)} (indemnizacion y aguinaldo).`;
+  const deds=[
+    {c:'Cotizacion ISSS (trabajador)',l:'Regl. ISSS, Art. 29',v:s.isss},
+    {c:'Cotizacion AFP (trabajador)', l:'Ley SAP',            v:s.afp},
+    {c:'Retencion de ISR',           l:'Art. 37 Ley de ISR', v:s.isr}
+  ];
+  g('pDeducciones').innerHTML=deds.map(r=>`<tr><td>${r.c}</td><td>${r.l}</td><td class="right">-${fmt(r.v)}</td></tr>`).join('');
+  g('pNetoTotal').textContent=fmt(s.neto);
+  g('pNetoLetras').textContent=numLetras(s.neto);
+  g('pDeclaracion').textContent=`La persona trabajadora ${s.nombre||'—'} declara haber recibido el detalle de las prestaciones economicas calculadas conforme al Codigo de Trabajo de El Salvador, asi como el desglose de las retenciones de ley aplicadas y el monto neto resultante.`;
+  g('pFooter').textContent=`Generado el ${fh} - Calculadora de Prestaciones Laborales – LAB 2 DEE UGB 2026`;
+  window.print();
+}
 
-        function limpiarHistorial() {
-            if (confirm('¿Está seguro de limpiar todo el historial guardado?')) {
-                localStorage.removeItem('historialLiquidacionesSV');
-                renderizarHistorial();
-            }
-        }
+/* Casos de prueba */
+function loadCase(n){
+  g('toggleSinAsueto').classList.remove('on'); g('asuetosSection').style.display='block';
+  g('toggleNoAplica').classList.remove('on');  g('hextSection').style.display='block';
+  document.querySelectorAll('input[name="asueto"]').forEach(c=>c.checked=false);
+  const c={
+    1:{nom:'Carlos Alberto Cruz',   pat:'Retail SV S.A.',      car:'Auxiliar de Tienda',   sal:600, ing:'2019-04-01',ter:'2026-09-28',uvac:'2025-04-01',a:7,m:5,tipo:'despido_injusto',hd:10,hn:5,dd:1,asue:['asv11','asv14']},
+    2:{nom:'Marta Elena Rivas',     pat:'Servicios XYZ S.A.',  car:'Cajera',               sal:500, ing:'2022-01-10',ter:'2026-09-28',uvac:'2025-01-10',a:4,m:8,tipo:'despido_justo',hd:0,hn:0,dd:0,asue:[]},
+    3:{nom:'Jose Roberto Ventura',  pat:'Industrias Norte',    car:'Operario',             sal:800, ing:'2024-01-15',ter:'2026-09-28',uvac:'2024-01-15',a:2,m:8,tipo:'renuncia',hd:0,hn:0,dd:0,asue:[]},
+    4:{nom:'Ana Cecilia Vasquez',   pat:'Corporacion ABC',     car:'Coordinadora',         sal:950, ing:'2021-06-01',ter:'2026-09-28',uvac:'2025-06-01',a:5,m:3,tipo:'renuncia',hd:0,hn:0,dd:0,asue:[]},
+    5:{nom:'Roberto Alfredo Aguilar',pat:'Orion Software S.A.',car:'Ingeniero de Software',sal:4000,ing:'2006-01-01',ter:'2026-08-12',uvac:'2025-08-12',a:20,m:7,tipo:'despido_injusto',hd:20,hn:10,dd:5,asue:['asv05','asv11','asv14']}
+  }[n];
+  if(!c)return;
+  g('nombreTrabajador').value=c.nom; g('patrono').value=c.pat; g('cargo').value=c.car;
+  g('salario').value=c.sal; g('fechaIngreso').value=c.ing; g('fechaTermino').value=c.ter;
+  g('ultimaVacacion').value=c.uvac; g('anios').value=c.a; g('meses').value=c.m;
+  document.querySelector(`input[name="tipoCierre"][value="${c.tipo}"]`).checked=true;
+  g('hExtDiurnas').value=c.hd; g('hExtNocturnas').value=c.hn; g('diasDescanso').value=c.dd;
+  c.asue.forEach(id=>{const el=g(id);if(el)el.checked=true;});
+  updateCierreUI();
+}
 
-        function exportarJSON() {
-            let historial = localStorage.getItem('historialLiquidacionesSV') || '[]';
-            let blob = new Blob([historial], { type: 'application/json' });
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = 'liquidaciones_el_salvador.json';
-            a.click();
-        }
+function resetAll(){
+  g('calcForm').reset();
+  g('toggleSinAsueto').classList.remove('on'); g('asuetosSection').style.display='block';
+  g('toggleNoAplica').classList.remove('on');  g('hextSection').style.display='block';
+  document.querySelectorAll('input[name="asueto"]').forEach(c=>c.checked=false);
+  updateCierreUI();
+}
 
-        function exportarCSV() {
-            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
-            if (historial.length === 0) {
-                alert('No hay datos para exportar.');
-                return;
-            }
-            let csv = 'Fecha,Folio,Trabajador,DUI,Empresa,SalarioMensual,NetoAPagar\n';
-            historial.forEach(item => {
-                csv += `"${item.fecha}","${item.folio}","${item.nombre}","${item.dui}","${item.empresa}",${item.salarioMensual},${item.montoTotalNeto}\n`;
-            });
-            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            let url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = 'liquidaciones_el_salvador.csv';
-            a.click();
-        }
+/* Dark mode */
+g('themeToggle').addEventListener('click',()=>{
+  const d=document.documentElement.getAttribute('data-theme')==='dark';
+  if(d){document.documentElement.removeAttribute('data-theme');g('themeToggle').textContent='🌙 Modo Oscuro';}
+  else{document.documentElement.setAttribute('data-theme','dark');g('themeToggle').textContent='☀️ Modo Claro';}
+});
 
-        // Simulador Fiscal
-        function ejecutarSimulacionFiscal() {
-            const salario = parseFloat(document.getElementById('simSalario').value) || 0;
-            const isss = Math.min(salario, 1000.00) * 0.03;
-            const afp = salario * 0.0725;
-            const sujetoRenta = salario - (isss + afp);
-            const renta = calcularRentaSV(sujetoRenta);
-
-            document.getElementById('simResISSS').innerText = `-$${isss.toFixed(2)}`;
-            document.getElementById('simResAFP').innerText = `-$${afp.toFixed(2)}`;
-            document.getElementById('simResRenta').innerText = `-$${renta.toFixed(2)}`;
-
-            let tramoStr = "Tramo I: Exento";
-            if (sujetoRenta > 472.00 && sujetoRenta <= 895.24) tramoStr = "Tramo II (10% sobre exceso de $472.00 + $17.50)";
-            else if (sujetoRenta > 895.24 && sujetoRenta <= 2038.10) tramoStr = "Tramo III (20% sobre exceso de $895.24 + $60.00)";
-            else if (sujetoRenta > 2038.10) tramoStr = "Tramo IV (30% sobre exceso de $2,038.10 + $288.57)";
-            document.getElementById('simTramo').innerText = tramoStr;
-        }
-
-        // Exportar PDF profesional con jsPDF
-        function exportarPDFjsPDF() {
-            if (!ultimoCalculoCache) calcularPrestaciones();
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(16);
-            doc.setTextColor(15, 23, 42);
-            doc.text("COMPROBANTE OFICIAL DE LIQUIDACIÓN LABORAL", 14, 20);
-            
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(100, 100, 100);
-            doc.text("República de El Salvador - Código de Trabajo", 14, 26);
-            
-            doc.setLineWidth(0.5);
-            doc.line(14, 30, 196, 30);
-
-            doc.setFont("helvetica", "bold");
-            doc.setTextColor(0, 0, 0);
-            doc.text("Datos Generales:", 14, 38);
-            doc.setFont("helvetica", "normal");
-            doc.text(`Folio Único: ${ultimoCalculoCache.folio}`, 14, 44);
-            doc.text(`Fecha de Emisión: ${ultimoCalculoCache.fecha}`, 14, 50);
-            doc.text(`Empresa / Empleador: ${ultimoCalculoCache.empresa}`, 14, 56);
-            doc.text(`Trabajador: ${ultimoCalculoCache.nombre} (DUI: ${ultimoCalculoCache.dui})`, 14, 62);
-            doc.text(`Salario Mensual Base: $${ultimoCalculoCache.salarioMensual.toFixed(2)}`, 14, 68);
-            doc.text(`Tiempo Laborado: ${ultimoCalculoCache.anos} años, ${ultimoCalculoCache.meses} meses, ${ultimoCalculoCache.dias} días`, 14, 74);
-            doc.text(`Causa de Retiro: ${ultimoCalculoCache.tipoCierre}`, 14, 80);
-
-            doc.setFont("helvetica", "bold");
-            doc.text("Desglose Económico:", 14, 90);
-            doc.setFont("helvetica", "normal");
-            doc.text(`- Vacaciones Proporcionales y Prima: $${ultimoCalculoCache.vacacionTotalAcumulada.toFixed(2)}`, 18, 98);
-            doc.text(`- Aguinaldo Proporcional: $${ultimoCalculoCache.aguinaldoProporcional.toFixed(2)}`, 18, 104);
-            doc.text(`- Indemnización Laboral: $${ultimoCalculoCache.montoIndemnizacion.toFixed(2)}`, 18, 110);
-            doc.text(`- Horas Extras y Asuetos: $${(ultimoCalculoCache.subtotalHEsDiurnas + ultimoCalculoCache.subtotalHEsNocturnas + ultimoCalculoCache.montoAsuetos + ultimoCalculoCache.montoDescanso).toFixed(2)}`, 18, 116);
-            doc.text(`- Deducciones (ISSS, AFP, Renta): -$${(ultimoCalculoCache.montoISSS + ultimoCalculoCache.montoAFP + ultimoCalculoCache.montoRenta).toFixed(2)}`, 18, 122);
-
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(12);
-            doc.text(`TOTAL NETO A PERCIBIR: $${ultimoCalculoCache.montoTotalNeto.toFixed(2)}`, 14, 134);
-            doc.setFontSize(10);
-            doc.setFont("helvetica", "italic");
-            doc.text(ultimoCalculoCache.letrasTotal, 14, 142);
-
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(9);
-            doc.setTextColor(180, 50, 50);
-            doc.text("ADVERTENCIA: Documento informativo de simulación de liquidación conforme a la ley salvadoreña.", 14, 160);
-
-            doc.line(14, 190, 80, 190);
-            doc.line(130, 190, 196, 190);
-            doc.setFont("helvetica", "normal");
-            doc.setTextColor(0, 0, 0);
-            doc.text("Firma del Empleador", 30, 195);
-            doc.text("Firma del Trabajador", 145, 195);
-
-            doc.save(`Liquidacion_${ultimoCalculoCache.nombre.replace(/\s+/g, '_')}.pdf`);
-        }
-
-        // Ejecutar cálculo inicial al cargar
-        window.onload = function() {
-            calcularPrestaciones();
-        };
-    </script>
+/* Init */
+document.addEventListener('DOMContentLoaded',()=>{
+  g('calcForm').addEventListener('input',calculate);
+  g('calcForm').addEventListener('change',calculate);
+  updateCierreUI();
+});
+</script>
 </body>
 </html>
