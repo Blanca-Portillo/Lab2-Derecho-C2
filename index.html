@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Prestaciones Laborales - El Salvador</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --secondary-color: #2b6cb0;
+            --accent-color: #319795;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+        }
+        .section-title {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+        }
+        .btn-calculate {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            width: 100%;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background 0.2s;
+        }
+        .btn-calculate:hover {
+            background-color: #2c7a7b;
+        }
+        .results-container {
+            margin-top: 35px;
+            background-color: #ebf8ff;
+            border: 1px solid #bee3f8;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .results-container h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            font-size: 1.3rem;
+            border-bottom: 2px solid #bee3f8;
+            padding-bottom: 8px;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #cbd5e0;
+            font-size: 1rem;
+        }
+        .result-row.total {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            border-bottom: none;
+            border-top: 2px solid var(--primary-color);
+            margin-top: 10px;
+            padding-top: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Calculadora de Prestaciones Laborales</h1>
+    <p class="subtitle">Normativa Aplicable: Código de Trabajo de El Salvador[cite: 1]</p>
+
+    <form id="laborForm">
+        <!-- Bloque 1: Datos Financieros y Antigüedad -->
+        <div class="section-title">1. Datos Financieros y Antigüedad</div>
+        <div class="grid">
+            <div class="form-group">
+                <label for="salarioMensual">Ingreso Mensual (USD):</label>
+                <input type="number" id="salarioMensual" step="0.01" min="0" required placeholder="Ej. 500.00">
+            </div>
+            <div class="form-group">
+                <label for="anosLaborados">Años Laborados:</label>
+                <input type="number" id="anosLaborados" min="0" value="0" required>
+            </div>
+            <div class="form-group">
+                <label for="mesesLaborados">Meses Fraccionados (0 a 11):</label>
+                <input type="number" id="mesesLaborados" min="0" max="11" value="0" required>
+            </div>
+        </div>
+
+        <!-- Bloque 2: Causa de Finalización -->
+        <div class="section-title">2. Causa de Finalización de la Relación Laboral</div>
+        <div class="grid">
+            <div class="form-group" style="grid-column: span 2;">
+                <label for="tipoCierre">Tipo de Cierre:</label>
+                <select id="tipoCierre">
+                    <option value="despido">Despido Injustificado (Aplica Indemnización Art. 58)</option>
+                    <option value="renuncia">Renuncia Voluntaria</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Bloque 3: Jornadas Extraordinarias y Días Especiales -->
+        <div class="section-title">3. Jornadas Extraordinarias y Días Especiales (Periodo Actual)</div>
+        <div class="grid">
+            <div class="form-group">
+                <label for="horasExtrasDiurnas">Horas Extras Diurnas:</label>
+                <input type="number" id="horasExtrasDiurnas" min="0" value="0" step="1">
+            </div>
+            <div class="form-group">
+                <label for="horasExtrasNocturnas">Horas Extras Nocturnas:</label>
+                <input type="number" id="horasExtrasNocturnas" min="0" value="0" step="1">
+            </div>
+            <div class="form-group">
+                <label for="diasAsueto">Días de Asueto Laborados:</label>
+                <input type="number" id="diasAsueto" min="0" value="0" step="1">
+            </div>
+            <div class="form-group">
+                <label for="diasDescanso">Días de Descanso Semanal Laborados:</label>
+                <input type="number" id="diasDescanso" min="0" value="0" step="1">
+            </div>
+        </div>
+
+        <button type="button" class="btn-calculate" onclick="calcularPrestaciones()">Calcular Liquidación</button>
+    </form>
+
+    <!-- Panel de Resultados Automáticos -->
+    <div class="results-container" id="panelResultados" style="display: none;">
+        <h2>Panel de Resultados Automáticos</h2>
+        <div class="result-row">
+            <span>Vacación Proporcional Acumulada (+ 30% Prima):</span>
+            <span id="resVacaciones">$0.00</span>
+        </div>
+        <div class="result-row">
+            <span>Aguinaldo Proporcional Acumulado:</span>
+            <span id="resAguinaldo">$0.00</span>
+        </div>
+        <div class="result-row">
+            <span>Indemnización (Art. 58 Código de Trabajo):</span>
+            <span id="resIndemnizacion">$0.00</span>
+        </div>
+        <div class="result-row">
+            <span>Subtotal Horas Extras Diurnas:</span>
+            <span id="resHEsDiurnas">$0.00</span>
+        </div>
+        <div class="result-row">
+            <span>Subtotal Horas Extras Nocturnas:</span>
+            <span id="resHEsNocturnas">$0.00</span>
+        </div>
+        <div class="result-row">
+            <span>Monto por Días de Asueto Laborados:</span>
+            <span id="resAsuetos">$0.00</span>
+        </div>
+        <div class="result-row">
+            <span>Monto por Días de Descanso Semanal Laborados:</span>
+            <span id="resDescanso">$0.00</span>
+        </div>
+        <div class="result-row total">
+            <span>Monto Total de la Liquidación:</span>
+            <span id="resTotal">$0.00</span>
+        </div>
+    </div>
+</div>
+
+<script>
+function calcularPrestaciones() {
+    // Obtener valores de entrada
+    const salarioMensual = parseFloat(document.getElementById('salarioMensual').value) || 0;
+    const anos = parseInt(document.getElementById('anosLaborados').value) || 0;
+    const meses = parseInt(document.getElementById('mesesLaborados').value) || 0;
+    const tipoCierre = document.getElementById('tipoCierre').value;
+    
+    const hDiurnas = parseFloat(document.getElementById('horasExtrasDiurnas').value) || 0;
+    const hNocturnas = parseFloat(document.getElementById('horasExtrasNocturnas').value) || 0;
+    const diasAsueto = parseFloat(document.getElementById('diasAsueto').value) || 0;
+    const diasDescanso = parseFloat(document.getElementById('diasDescanso').value) || 0;
+
+    // Fórmulas base conforme a Ley Salvadoreña
+    const salarioDiario = salarioMensual / 30.0;
+    const salarioHoraNormal = salarioDiario / 8.0;
+    const totalMesesDecimal = anos * 12 + meses;
+    const totalAniosDecimal = totalMesesDecimal / 12.0;
+
+    // 1. Vacaciones Proporcionales con Prima del 30% (Arts. 177 y 187 CT)
+    // 15 días de salario por año + 30% de prima sobre dichos días
+    const valor15DiasVacaciones = salarioDiario * 15;
+    const primaVacacional = valor15DiasVacaciones * 0.30;
+    const totalAnualVacaciones = valor15DiasVacaciones + primaVacacional;
+    // Proporcional según tiempo laborado en el año actual (asumiendo fracción o año completo)
+    const fraccionAnioActual = (meses / 12.0);
+    const vacacionProporcional = (anos === 0 && meses > 0) 
+        ? (totalAnualVacaciones / 12.0) * meses 
+        : (totalAnualVacaciones / 365.0) * (totalMesesDecimal >= 12 ? (meses * 30) : (totalMesesDecimal * 30)); 
+    // Simplificación estándar proporcional basada en meses sobre el ciclo anual:
+    const montoVacaciones = (totalAnualVacaciones / 12.0) * (totalMesesDecimal % 12 + (anos > 0 && totalMesesDecimal % 12 === 0 ? 12 : 0)); 
+    // Ajuste seguro proporcional por mes:
+    const vacacionFinal = (totalAnualVacaciones / 12.0) * (totalMesesDecimal % 12) + (anos > 0 ? totalAnualVacaciones : 0); // Para simplificar fines académicos, calcularemos por mes fracción:
+    const montoVacacionCalculado = (totalAnualVacaciones / 12) * (totalMesesDecimal % 12); // Fracción del año en curso
+    const vacacionTotalAcumulada = (anos * totalAnualVacaciones) + montoVacacionCalculado;
+
+    // 2. Aguinaldo Proporcional (Arts. 198 y 202 CT)
+    // Antigüedad: 1 a <3 años = 15 días; 3 a <10 años = 19 días; 10+ años = 21 días.
+    let diasAguinaldo = 15;
+    if (anos >= 3 && anos < 10) diasAguinaldo = 19;
+    else if (anos >= 10) diasAguinaldo = 21;
+    
+    const aguinaldoAnualCompleto = salarioDiario * diasAguinaldo;
+    // Proporcional al año en curso (fracción de meses trabajados en el año)
+    const aguinaldoProporcional = (aguinaldoAnualCompleto / 12.0) * (meses);
+
+    // 3. Indemnización por Despido Injustificado (Art. 58 CT)
+    // 30 días por año de servicio y proporcional por fracciones. Mínimo 15 días.
+    let montoIndemnizacion = 0;
+    if (tipoCierre === 'despido') {
+        const indAnual = salarioDiario * 30 * anos;
+        const indFraccion = salarioDiario * 30 * (meses / 12.0);
+        montoIndemnizacion = indAnual + indFraccion;
+        const minimoLegal = salarioDiario * 15;
+        if (montoIndemnizacion < minimoLegal && totalMesesDecimal > 0) {
+            montoIndemnizacion = minimoLegal;
+        }
+    }
+
+    // 4. Horas Extras Diurnas (Recargo del 100% sobre hora normal -> se pagan al doble, es decir, hora normal * 2)
+    const pagoHoraExtraDiurna = salarioHoraNormal * 2.0;
+    const subtotalHEsDiurnas = pagoHoraExtraDiurna * hDiurnas;
+
+    // 5. Horas Extras Nocturnas (Recargo del 100% + 25% nocturnidad = pago al 125% adicional o factor 2.25 según Art. 169/170 CT, o 2.0 habitual por recargo de ley nocturno)
+    const pagoHoraExtraNocturna = salarioHoraNormal * 2.25; 
+    const subtotalHEsNocturnas = pagoHoraExtraNocturna * hNocturnas;
+
+    // 6. Días de Asueto Laborados (Art. 113 CT - pago triple o recargo del 100% adicional sobre el salario diario)
+    const montoAsuetos = (salarioDiario * 2.0) * diasAsueto;
+
+    // 7. Días de Descanso Semanal (Séptimo día) Laborados (Art. 51 CT - recargo del 100%)
+    const montoDescanso = (salarioDiario * 2.0) * diasDescanso;
+
+    // Total General de Liquidación
+    const montoTotal = vacacionTotalAcumulada + aguinaldoProporcional + montoIndemnizacion + 
+                       subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso;
+
+    // Mostrar en el panel de resultados formateado a 2 decimales
+    document.getElementById('resVacaciones').innerText = `$${vacacionTotalAcumulada.toFixed(2)}`;
+    document.getElementById('resAguinaldo').innerText = `$${aguinaldoProporcional.toFixed(2)}`;
+    document.getElementById('resIndemnizacion').innerText = `$${montoIndemnizacion.toFixed(2)}`;
+    document.getElementById('resHEsDiurnas').innerText = `$${subtotalHEsDiurnas.toFixed(2)}`;
+    document.getElementById('resHEsNocturnas').innerText = `$${subtotalHEsNocturnas.toFixed(2)}`;
+    document.getElementById('resAsuetos').innerText = `$${montoAsuetos.toFixed(2)}`;
+    document.getElementById('resDescanso').innerText = `$${montoDescanso.toFixed(2)}`;
+    document.getElementById('resTotal').innerText = `$${montoTotal.toFixed(2)}`;
+
+    document.getElementById('panelResultados').style.display = 'block';
+}
+</script>
+
+</body>
+</html>
