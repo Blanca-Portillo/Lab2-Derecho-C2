@@ -3,313 +3,904 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Prestaciones Laborales - El Salvador</title>
+    <title>Calculadora y Sistema de Liquidación Laboral - El Salvador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluyendo jsPDF para exportación oficial a PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
-        :root {
-            --primary-color: #1a365d;
-            --secondary-color: #2b6cb0;
-            --accent-color: #319795;
-            --bg-color: #f7fafc;
-            --card-bg: #ffffff;
-            --text-color: #2d3748;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        }
-        h1 {
-            color: var(--primary-color);
-            text-align: center;
-            margin-bottom: 5px;
-        }
-        p.subtitle {
-            text-align: center;
-            color: #718096;
-            margin-bottom: 30px;
-        }
-        .section-title {
-            background-color: var(--primary-color);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 6px;
-            font-size: 1.1rem;
-            margin-top: 25px;
-            margin-bottom: 15px;
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-        }
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-        input:focus, select:focus {
-            border-color: var(--secondary-color);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
-        }
-        .btn-calculate {
-            background-color: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            width: 100%;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 30px;
-            transition: background 0.2s;
-        }
-        .btn-calculate:hover {
-            background-color: #2c7a7b;
-        }
-        .results-container {
-            margin-top: 35px;
-            background-color: #ebf8ff;
-            border: 1px solid #bee3f8;
-            padding: 20px;
-            border-radius: 8px;
-        }
-        .results-container h2 {
-            color: var(--primary-color);
-            margin-top: 0;
-            font-size: 1.3rem;
-            border-bottom: 2px solid #bee3f8;
-            padding-bottom: 8px;
-        }
-        .result-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px dashed #cbd5e0;
-            font-size: 1rem;
-        }
-        .result-row.total {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: var(--primary-color);
-            border-bottom: none;
-            border-top: 2px solid var(--primary-color);
-            margin-top: 10px;
-            padding-top: 12px;
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #panelComprobante, #panelComprobante * {
+                visibility: visible;
+            }
+            #panelComprobante {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 min-h-screen p-4 sm:p-6 font-sans">
 
-<div class="container">
-    <h1>Calculadora de Prestaciones Laborales</h1>
-    <p class="subtitle">Normativa Aplicable: Código de Trabajo de El Salvador[cite: 1]</p>
+    <div class="max-w-6xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-xl">
+        <header class="text-center mb-8 border-b pb-6">
+            <h1 class="text-3xl font-extrabold text-blue-900 mb-2">Sistema Integral de Liquidación y Prestaciones Laborales</h1>
+            <p class="text-slate-500 font-medium">Normativa Aplicable: Código de Trabajo de El Salvador, ISSS, AFP y Ministerio de Hacienda</p>
+            <div class="flex flex-wrap justify-center gap-2 sm:gap-4 mt-4 no-print">
+                <button onclick="cambiarVista('calculadora')" id="btnTabCalc" class="px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow transition">Calculadora Interactiva</button>
+                <button onclick="cambiarVista('historial')" id="btnTabHist" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Historial Local</button>
+                <button onclick="cambiarVista('simuladorTributario')" id="btnTabSim" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Simulador Fiscal & Renta</button>
+                <button onclick="cambiarVista('documentosLegales')" id="btnTabDocs" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Generador de Cartas & Finiquitos</button>
+                <button onclick="cambiarVista('documentacion')" id="btnTabDoc" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition">Memoria Técnica y Legal</button>
+            </div>
+        </header>
 
-    <form id="laborForm">
-        <!-- Bloque 1: Datos Financieros y Antigüedad -->
-        <div class="section-title">1. Datos Financieros y Antigüedad</div>
-        <div class="grid">
-            <div class="form-group">
-                <label for="salarioMensual">Ingreso Mensual (USD):</label>
-                <input type="number" id="salarioMensual" step="0.01" min="0" required placeholder="Ej. 500.00">
+        <!-- ================= VISTA 1: CALCULADORA ================= -->
+        <div id="vistaCalculadora" class="space-y-6">
+            <form id="laborForm" class="space-y-6">
+                <!-- 0. Datos del Trabajador -->
+                <div class="bg-blue-900 text-white px-4 py-2 rounded-lg font-semibold text-lg flex justify-between items-center">
+                    <span>0. Datos Generales del Trabajador y Empresa</span>
+                    <button type="button" onclick="cargarEjemplo()" class="text-xs bg-blue-700 hover:bg-blue-600 px-3 py-1 rounded text-white no-print">Cargar Datos de Prueba</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="nombreTrabajador">Nombre del Trabajador:</label>
+                        <input type="text" id="nombreTrabajador" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="Carlos Alberto Martínez">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="duiTrabajador">DUI / Identificación:</label>
+                        <input type="text" id="duiTrabajador" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="04589214-2">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="nombreEmpresa">Empresa / Institución:</label>
+                        <input type="text" id="nombreEmpresa" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="Industrias S.A. de C.V.">
+                    </div>
+                </div>
+
+                <!-- 1. Antigüedad y Fechas -->
+                <div class="bg-blue-900 text-white px-4 py-2 rounded-lg font-semibold text-lg">
+                    1. Datos Temporales y Salariales
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="salarioMensual">Salario Mensual (USD):</label>
+                        <input type="number" id="salarioMensual" step="0.01" min="0" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" value="700.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="anosLaborados">Años Laborados:</label>
+                        <input type="number" id="anosLaborados" min="0" value="2" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="mesesLaborados">Meses Fraccionados (0-11):</label>
+                        <input type="number" id="mesesLaborados" min="0" max="11" value="6" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="diasLaborados">Días Fraccionados (0-29):</label>
+                        <input type="number" id="diasLaborados" min="0" max="29" value="15" required class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Opciones Avanzadas de Prestaciones -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="vacacionesPagadas">¿Vacaciones del año actual ya fueron pagadas o gozadas?</label>
+                        <select id="vacacionesPagadas" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="no">No (Incluir cálculo proporcional de vacaciones)</option>
+                            <option value="si">Sí (Ya fueron pagadas/gozadas, no incluir)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="tipoCierre">Causa de Finalización de Relación Laboral:</label>
+                        <select id="tipoCierre" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="despido">Despido Injustificado (Aplica Indemnización Art. 58 CT)</option>
+                            <option value="renuncia">Renuncia Voluntaria (Sin Indemnización por despido)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 2. Jornadas Extraordinarias y Asuetos -->
+                <div class="bg-blue-900 text-white px-4 py-2 rounded-lg font-semibold text-lg">
+                    2. Jornadas Extraordinarias y Días Especiales (Periodo Actual)
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="horasExtrasDiurnas">Horas Extras Diurnas:</label>
+                        <input type="number" id="horasExtrasDiurnas" min="0" value="4" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="horasExtrasNocturnas">Horas Extras Nocturnas:</label>
+                        <input type="number" id="horasExtrasNocturnas" min="0" value="2" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="diasAsueto">Días de Asueto Laborados:</label>
+                        <input type="number" id="diasAsueto" min="0" value="1" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="diasDescanso">Días de Descanso Laborados:</label>
+                        <input type="number" id="diasDescanso" min="0" value="1" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="button" onclick="calcularPrestaciones()" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 text-lg">
+                        Calcular Liquidación Oficial y Generar Comprobante
+                    </button>
+                    <button type="button" onclick="guardarLiquidacionHistorial()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-4 px-6 rounded-xl shadow-lg transition-all duration-200">
+                        Guardar en Historial
+                    </button>
+                </div>
+            </form>
+
+            <!-- Panel de Resultados Automáticos -->
+            <div id="panelResultados" class="mt-10 bg-sky-50 border border-sky-200 p-6 rounded-2xl shadow-inner hidden">
+                <h2 class="text-2xl font-bold text-blue-900 mb-4 border-b pb-2">Panel de Resultados Automáticos de Liquidación</h2>
+                
+                <div class="space-y-3 text-slate-700">
+                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <span>Vacación Proporcional Acumulada (+ 30% Prima):</span>
+                        <span id="resVacaciones" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <span>Aguinaldo Proporcional Acumulado:</span>
+                        <span id="resAguinaldo" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <span>Indemnización (Art. 58 Código de Trabajo):</span>
+                        <span id="resIndemnizacion" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <span>Subtotal Horas Extras Diurnas:</span>
+                        <span id="resHEsDiurnas" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <span>Subtotal Horas Extras Nocturnas:</span>
+                        <span id="resHEsNocturnas" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <span>Monto por Días de Asueto Laborados:</span>
+                        <span id="resAsuetos" class="font-semibold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-slate-300 py-2">
+                        <span>Monto por Días de Descanso Semanal Laborados:</span>
+                        <span id="resDescanso" class="font-semibold">$0.00</span>
+                    </div>
+
+                    <div class="flex justify-between border-t-2 border-blue-900 pt-3 text-lg font-bold text-blue-900">
+                        <span>Monto Total Bruto:</span>
+                        <span id="resBruto">$0.00</span>
+                    </div>
+
+                    <div class="pt-2 font-bold text-red-600">Deducciones de Ley Obligatorias en El Salvador:</div>
+                    <div class="flex justify-between border-b border-dashed border-red-200 py-2 text-red-700">
+                        <span>Cotización ISSS (3.0% / Tope Legal $1,000.00):</span>
+                        <span id="resISSS" class="font-semibold">-$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-red-200 py-2 text-red-700">
+                        <span>Cotización AFP (7.25%):</span>
+                        <span id="resAFP" class="font-semibold">-$0.00</span>
+                    </div>
+                    <div class="flex justify-between border-b border-dashed border-red-200 py-2 text-red-700">
+                        <span>Retención Impuesto sobre la Renta (Tabla MH):</span>
+                        <span id="resRenta" class="font-semibold">-$0.00</span>
+                    </div>
+
+                    <div class="flex justify-between border-t-2 border-blue-900 pt-3 text-xl font-extrabold text-blue-900">
+                        <span>Monto Total Neto a Pagar:</span>
+                        <span id="resTotalNeto">$0.00</span>
+                    </div>
+
+                    <div id="resMontoLetras" class="bg-white p-4 rounded-xl border border-slate-200 text-center font-bold text-blue-800 shadow-sm mt-4">
+                        Son: Cero dólares 00/100 USD
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="anosLaborados">Años Laborados:</label>
-                <input type="number" id="anosLaborados" min="0" value="0" required>
-            </div>
-            <div class="form-group">
-                <label for="mesesLaborados">Meses Fraccionados (0 a 11):</label>
-                <input type="number" id="mesesLaborados" min="0" max="11" value="0" required>
+
+            <!-- Panel Comprobante Imprimible / Exportable a PDF -->
+            <div id="panelComprobante" class="mt-12 bg-white border-2 border-blue-900 p-6 sm:p-8 rounded-2xl shadow-xl hidden relative overflow-hidden">
+                <!-- Marca de agua formal -->
+                <div class="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none select-none">
+                    <span class="text-6xl font-black text-blue-900 transform -rotate-45">COMPROBANTE OFICIAL SV</span>
+                </div>
+
+                <div class="flex justify-between items-center border-b-2 border-blue-900 pb-4 mb-6">
+                    <div>
+                        <h3 class="text-2xl font-black text-blue-900">COMPROBANTE DE LIQUIDACIÓN LABORAL</h3>
+                        <p class="text-sm text-slate-500 font-medium mt-1">Conforme al Código de Trabajo de la República de El Salvador</p>
+                    </div>
+                    <div class="text-right text-xs text-slate-600">
+                        <div><strong>Folio Único:</strong> <span id="vFolio">---</span></div>
+                        <div><strong>Fecha:</strong> <span id="vFecha">---</span></div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div><strong>Empresa / Empleador:</strong> <span id="vEmpresa">---</span></div>
+                    <div><strong>Trabajador:</strong> <span id="vNombre">---</span></div>
+                    <div><strong>DUI:</strong> <span id="vDui">---</span></div>
+                    <div><strong>Salario Mensual Base:</strong> <span id="vSalario">---</span></div>
+                    <div><strong>Tiempo Laborado:</strong> <span id="vTiempo">---</span></div>
+                    <div><strong>Causa de Retiro:</strong> <span id="vCausa">---</span></div>
+                </div>
+
+                <div class="font-bold text-blue-900 mb-2">Desglose Económico de Liquidación:</div>
+                <div id="vDesgloseContainer" class="space-y-2 text-sm"></div>
+
+                <div class="flex justify-between border-t-2 border-blue-900 pt-4 mt-4 text-lg font-bold text-blue-900">
+                    <span>TOTAL NETO A PERCIBIR:</span>
+                    <span id="vTotalNeto">---</span>
+                </div>
+
+                <div id="vMontoLetras" class="bg-sky-50 p-3 rounded-lg text-center font-bold text-blue-800 text-sm mt-3 border border-sky-100">
+                    ---
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl text-xs sm:text-sm mt-6 leading-relaxed">
+                    <strong>ADVERTENCIA LEGAL OBLIGATORIA:</strong> Este comprobante ha sido generado de manera automática como herramienta informativa. No sustituye la liquidación oficial emitida por el Ministerio de Trabajo y Previsión Social (MTPS).
+                </div>
+
+                <div class="grid grid-cols-2 gap-8 mt-12 pt-8 border-t border-slate-300 text-center text-sm font-semibold">
+                    <div>
+                        <div class="border-t border-slate-700 w-3/4 mx-auto pt-2">Firma del Empleador / Representante</div>
+                    </div>
+                    <div>
+                        <div class="border-t border-slate-700 w-3/4 mx-auto pt-2">Firma del Trabajador (Conforme)</div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex flex-wrap justify-center gap-4 no-print">
+                    <button type="button" onclick="window.print()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">
+                        Imprimir / Guardar PDF Nativo
+                    </button>
+                    <button type="button" onclick="exportarPDFjsPDF()" class="bg-teal-700 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all">
+                        Descargar PDF Profesional (jsPDF)
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Bloque 2: Causa de Finalización -->
-        <div class="section-title">2. Causa de Finalización de la Relación Laboral</div>
-        <div class="grid">
-            <div class="form-group" style="grid-column: span 2;">
-                <label for="tipoCierre">Tipo de Cierre:</label>
-                <select id="tipoCierre">
-                    <option value="despido">Despido Injustificado (Aplica Indemnización Art. 58)</option>
-                    <option value="renuncia">Renuncia Voluntaria</option>
-                </select>
+        <!-- ================= VISTA 2: HISTORIAL LOCAL ================= -->
+        <div id="vistaHistorial" class="space-y-6 hidden">
+            <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border">
+                <div>
+                    <h2 class="text-xl font-bold text-blue-900">Historial de Liquidaciones Guardadas</h2>
+                    <p class="text-xs text-slate-500">Almacenadas localmente en su navegador mediante LocalStorage.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="exportarCSV()" class="bg-green-700 hover:bg-green-600 text-white text-sm px-4 py-2 rounded-lg font-semibold shadow">Exportar CSV</button>
+                    <button onclick="exportarJSON()" class="bg-blue-800 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg font-semibold shadow">Exportar JSON</button>
+                    <button onclick="limpiarHistorial()" class="bg-red-600 hover:bg-red-500 text-white text-sm px-4 py-2 rounded-lg font-semibold shadow">Limpiar Historial</button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse bg-white shadow rounded-xl overflow-hidden">
+                    <thead>
+                        <tr class="bg-blue-900 text-white text-sm">
+                            <th class="p-3">Fecha</th>
+                            <th class="p-3">Trabajador</th>
+                            <th class="p-3">Empresa</th>
+                            <th class="p-3">Salario</th>
+                            <th class="p-3">Neto a Pagar</th>
+                            <th class="p-3">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaHistorialBody" class="text-sm divide-y divide-slate-200">
+                        <!-- Relleno dinámico -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Bloque 3: Jornadas Extraordinarias y Días Especiales -->
-        <div class="section-title">3. Jornadas Extraordinarias y Días Especiales (Periodo Actual)</div>
-        <div class="grid">
-            <div class="form-group">
-                <label for="horasExtrasDiurnas">Horas Extras Diurnas:</label>
-                <input type="number" id="horasExtrasDiurnas" min="0" value="0" step="1">
-            </div>
-            <div class="form-group">
-                <label for="horasExtrasNocturnas">Horas Extras Nocturnas:</label>
-                <input type="number" id="horasExtrasNocturnas" min="0" value="0" step="1">
-            </div>
-            <div class="form-group">
-                <label for="diasAsueto">Días de Asueto Laborados:</label>
-                <input type="number" id="diasAsueto" min="0" value="0" step="1">
-            </div>
-            <div class="form-group">
-                <label for="diasDescanso">Días de Descanso Semanal Laborados:</label>
-                <input type="number" id="diasDescanso" min="0" value="0" step="1">
+        <!-- ================= VISTA 3: SIMULADOR TRIBUTARIO ================= -->
+        <div id="vistaSimuladorTributario" class="space-y-6 hidden">
+            <div class="bg-blue-50 border border-blue-200 p-6 rounded-2xl">
+                <h2 class="text-xl font-bold text-blue-900 mb-2">Simulador de Deducciones Fiscales y Seguridad Social (El Salvador)</h2>
+                <p class="text-sm text-slate-600 mb-6">Ingrese un salario mensual para simular los tramos de retención de Renta del Ministerio de Hacienda (MH) y las aportaciones a ISSS y AFP.</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold mb-1" for="simSalario">Salario Mensual Bruto (USD):</label>
+                        <input type="number" id="simSalario" step="0.01" value="1200.00" oninput="ejecutarSimulacionFiscal()" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <div class="text-xs text-slate-500 font-semibold uppercase">Cotización ISSS (3.0%)</div>
+                        <div id="simResISSS" class="text-2xl font-bold text-red-600 mt-1">$0.00</div>
+                        <div class="text-xs text-slate-400 mt-1">Tope legal cotizable: $1,000.00</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <div class="text-xs text-slate-500 font-semibold uppercase">Cotización AFP (7.25%)</div>
+                        <div id="simResAFP" class="text-2xl font-bold text-red-600 mt-1">$0.00</div>
+                        <div class="text-xs text-slate-400 mt-1">Sin tope máximo legal</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-xl border shadow-sm">
+                        <div class="text-xs text-slate-500 font-semibold uppercase">Retención Renta (MH)</div>
+                        <div id="simResRenta" class="text-2xl font-bold text-red-600 mt-1">$0.00</div>
+                        <div id="simTramo" class="text-xs text-blue-700 mt-1">Tramo aplicable...</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 bg-white p-6 rounded-xl border shadow-sm">
+                    <h3 class="font-bold text-blue-900 mb-3">Tablas Oficiales de Renta - Ministerio de Hacienda (El Salvador)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700">
+                                    <th class="p-2 border">Tramo</th>
+                                    <th class="p-2 border">Desde (USD)</th>
+                                    <th class="p-2 border">Hasta (USD)</th>
+                                    <th class="p-2 border">% Aplicable</th>
+                                    <th class="p-2 border">Sobre Exceso de</th>
+                                    <th class="p-2 border">Cuota Fija</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-2 border font-semibold">I (Iramo I)</td>
+                                    <td class="p-2 border">$0.01</td>
+                                    <td class="p-2 border">$472.00</td>
+                                    <td class="p-2 border text-green-600 font-bold">Exento</td>
+                                    <td class="p-2 border">$0.00</td>
+                                    <td class="p-2 border">$0.00</td>
+                                </tr>
+                                <tr class="bg-slate-50">
+                                    <td class="p-2 border font-semibold">II (Tramo II)</td>
+                                    <td class="p-2 border">$472.01</td>
+                                    <td class="p-2 border">$895.24</td>
+                                    <td class="p-2 border">10%</td>
+                                    <td class="p-2 border">$472.00</td>
+                                    <td class="p-2 border">$17.50</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 border font-semibold">III (Tramo III)</td>
+                                    <td class="p-2 border">$895.25</td>
+                                    <td class="p-2 border">$2,038.10</td>
+                                    <td class="p-2 border">20%</td>
+                                    <td class="p-2 border">$895.24</td>
+                                    <td class="p-2 border">$60.00</td>
+                                </tr>
+                                <tr class="bg-slate-50">
+                                    <td class="p-2 border font-semibold">IV (Tramo IV)</td>
+                                    <td class="p-2 border">$2,038.11</td>
+                                    <td class="p-2 border">En adelante</td>
+                                    <td class="p-2 border">30%</td>
+                                    <td class="p-2 border">$2,038.10</td>
+                                    <td class="p-2 border">$288.57</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <button type="button" class="btn-calculate" onclick="calcularPrestaciones()">Calcular Liquidación</button>
-    </form>
+        <!-- ================= VISTA 4: DOCUMENTOS LEGALES & FINIQUITOS ================= -->
+        <div id="vistaDocumentosLegales" class="space-y-6 hidden">
+            <div class="bg-slate-50 border border-slate-200 p-6 rounded-2xl">
+                <h2 class="text-xl font-bold text-blue-900 mb-2">Generador de Cartas de Renuncia y Finiquitos Laborales</h2>
+                <p class="text-sm text-slate-600 mb-6">Seleccione el tipo de documento legal requerido, personalice los datos y descárguelo o imprímalo directamente.</p>
+                
+                <div class="flex gap-4 mb-6">
+                    <button onclick="cambiarTipoDoc('renuncia')" id="btnDocRenuncia" class="px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow text-sm">Carta de Renuncia Voluntaria</button>
+                    <button onclick="cambiarTipoDoc('finiquito')" id="btnDocFiniquito" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow text-sm">Acta de Finiquito Laboral</button>
+                </div>
 
-    <!-- Panel de Resultados Automáticos -->
-    <div class="results-container" id="panelResultados" style="display: none;">
-        <h2>Panel de Resultados Automáticos</h2>
-        <div class="result-row">
-            <span>Vacación Proporcional Acumulada (+ 30% Prima):</span>
-            <span id="resVacaciones">$0.00</span>
+                <!-- Plantilla 1: Carta de Renuncia -->
+                <div id="plantillaRenuncia" class="bg-white p-8 border rounded-xl shadow space-y-4 text-sm leading-relaxed text-slate-800">
+                    <div class="text-right">San Salvador, <span id="docFechaRenuncia">---</span></div>
+                    <div class="font-bold">
+                        A la atención de:<br>
+                        Recursos Humanos / Gerencia General<br>
+                        <span id="docEmpresaRenuncia">Industrias S.A. de C.V.</span>
+                    </div>
+                    <div>Estimados señores:</div>
+                    <p>
+                        Por medio de la presente, yo, <strong id="docNombreRenuncia">Carlos Alberto Martínez</strong>, portador del Documento Único de Identidad (DUI) número <strong id="docDuiRenuncia">04589214-2</strong>, por motivos de índole personal, presento mi renuncia voluntaria al cargo de desempeñaba en la empresa, la cual se hará efectiva a partir del día <input type="date" id="fechaEfectivaRenuncia" class="border p-1 rounded">.
+                    </p>
+                    <p>
+                        A la vez, manifiesto expresamente que durante el tiempo que presté mis servicios para esta institución, recibí puntualmente el pago de mis salarios ordinarios y extraordinarios, así como el goce de mis prestaciones de ley, otorgando el más amplio y eficaz finiquito conforme a derecho.
+                    </p>
+                    <div>Atentamente,</div>
+                    <div class="mt-16 pt-4 border-t border-slate-400 w-1/3">
+                        Firma del Trabajador
+                    </div>
+                </div>
+
+                <!-- Plantilla 2: Finiquito Laboral -->
+                <div id="plantillaFiniquito" class="bg-white p-8 border rounded-xl shadow space-y-4 text-sm leading-relaxed text-slate-800 hidden">
+                    <div class="text-center font-black text-blue-900 text-lg mb-4">ACTA DE FINIQUITO Y LIQUIDACIÓN LABORAL</div>
+                    <p>
+                        En la ciudad de San Salvador, a los <span id="docFechaFiniquito">---</span>, comparecen por una parte la entidad mercantil <strong id="docEmpresaFiniquito">Industrias S.A. de C.V.</strong>, y por otra el/la trabajador(a) <strong id="docNombreFiniquito">Carlos Alberto Martínez</strong>, portador del DUI <strong id="docDuiFiniquito">04589214-2</strong>.
+                    </p>
+                    <p>
+                        Ambas partes manifiestan que han convenido finalizar la relación laboral que los unía, procediendo el empleador a cancelar al trabajador la cantidad neta de <strong id="docMontoFiniquito">$0.00</strong> en concepto de indemnización, vacaciones proporcionales, aguinaldo proporcional y demás derechos laborales correspondientes.
+                    </p>
+                    <p>
+                        Por medio del presente documento, el trabajador otorga a favor de la empresa el más amplio finiquito liberándola de cualquier obligación o reclamación judicial o administrativa posterior ante el Ministerio de Trabajo y Previsión Social (MTPS).
+                    </p>
+                    <div class="grid grid-cols-2 gap-12 mt-16 pt-8 text-center font-semibold">
+                        <div class="border-t border-slate-700 pt-2">Por el Empleador</div>
+                        <div class="border-t border-slate-700 pt-2">Por el Trabajador</div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end no-print">
+                    <button onclick="window.print()" class="bg-blue-900 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-xl shadow">Imprimir Documento</button>
+                </div>
+            </div>
         </div>
-        <div class="result-row">
-            <span>Aguinaldo Proporcional Acumulado:</span>
-            <span id="resAguinaldo">$0.00</span>
-        </div>
-        <div class="result-row">
-            <span>Indemnización (Art. 58 Código de Trabajo):</span>
-            <span id="resIndemnizacion">$0.00</span>
-        </div>
-        <div class="result-row">
-            <span>Subtotal Horas Extras Diurnas:</span>
-            <span id="resHEsDiurnas">$0.00</span>
-        </div>
-        <div class="result-row">
-            <span>Subtotal Horas Extras Nocturnas:</span>
-            <span id="resHEsNocturnas">$0.00</span>
-        </div>
-        <div class="result-row">
-            <span>Monto por Días de Asueto Laborados:</span>
-            <span id="resAsuetos">$0.00</span>
-        </div>
-        <div class="result-row">
-            <span>Monto por Días de Descanso Semanal Laborados:</span>
-            <span id="resDescanso">$0.00</span>
-        </div>
-        <div class="result-row total">
-            <span>Monto Total de la Liquidación:</span>
-            <span id="resTotal">$0.00</span>
+
+        <!-- ================= VISTA 5: DOCUMENTACIÓN TÉCNICA Y LEGAL ================= -->
+        <div id="vistaDocumentacion" class="space-y-8 hidden">
+            <div class="bg-blue-50 border border-blue-200 p-6 rounded-2xl">
+                <h2 class="text-xl font-bold text-blue-900 mb-3">1. Memoria de Fórmulas y Base Legal (Código de Trabajo de El Salvador)</h2>
+                <div class="space-y-4 text-sm text-slate-700 leading-relaxed">
+                                        
+<p><strong>Salario Diario:</strong> Se calcula dividiendo tu sueldo mensual entre 30 días. Esto sirve como base para pagar cada día laborado o fracción de tus prestaciones.</p>
+<p><strong>Vacaciones y Prima (Arts. 177 y 187 del Código de Trabajo):</strong> Por cada año de trabajo tienes derecho a 15 días de descanso pagado, más un 30% extra sobre ese valor para tus gastos vacacionales. Si terminas antes del año, se te paga la parte proporcional al tiempo exacto que trabajaste.</p>
+<p><strong>Aguinaldo (Arts. 198 y 202 del Código de Trabajo):</strong> Es una bonificación de fin de año que depende de cuánto tiempo llevas en la empresa: 15 días de salario si tienes menos de 3 años, 19 días si tienes entre 3 y 10 años, y 21 días si tienes 10 o más años de servicio. También se paga de forma proporcional si saliste antes de diciembre.</p>
+<p><strong>Indemnización por Despido Injustificado (Art. 58 del Código de Trabajo):</strong> Si te despiden sin una causa justificada establecida por la ley, la empresa debe pagarte el equivalente a 30 días de salario por cada año que trabajaste (y su parte proporcional si trabajaste meses o días adicionales), garantizando por ley un pago mínimo de al menos 15 días.</p>
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-function calcularPrestaciones() {
-    // Obtener valores de entrada
-    const salarioMensual = parseFloat(document.getElementById('salarioMensual').value) || 0;
-    const anos = parseInt(document.getElementById('anosLaborados').value) || 0;
-    const meses = parseInt(document.getElementById('mesesLaborados').value) || 0;
-    const tipoCierre = document.getElementById('tipoCierre').value;
-    
-    const hDiurnas = parseFloat(document.getElementById('horasExtrasDiurnas').value) || 0;
-    const hNocturnas = parseFloat(document.getElementById('horasExtrasNocturnas').value) || 0;
-    const diasAsueto = parseFloat(document.getElementById('diasAsueto').value) || 0;
-    const diasDescanso = parseFloat(document.getElementById('diasDescanso').value) || 0;
+    <script>
+        // Cambio de pestañas principal
+        function cambiarVista(vista) {
+            const vistas = ['vistaCalculadora', 'vistaHistorial', 'vistaSimuladorTributario', 'vistaDocumentosLegales', 'vistaDocumentacion'];
+            const botones = ['btnTabCalc', 'btnTabHist', 'btnTabSim', 'btnTabDocs', 'btnTabDoc'];
+            
+            const mapa = {
+                'calculadora': 0,
+                'historial': 1,
+                'simuladorTributario': 2,
+                'documentosLegales': 3,
+                'documentacion': 4
+            };
 
-    // Fórmulas base conforme a Ley Salvadoreña
-    const salarioDiario = salarioMensual / 30.0;
-    const salarioHoraNormal = salarioDiario / 8.0;
-    const totalMesesDecimal = anos * 12 + meses;
-    const totalAniosDecimal = totalMesesDecimal / 12.0;
+            vistas.forEach((v, idx) => {
+                const el = document.getElementById(v);
+                const btn = document.getElementById(botones[idx]);
+                if (idx === mapa[vista]) {
+                    el.classList.remove('hidden');
+                    btn.className = 'px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow transition';
+                } else {
+                    el.classList.add('hidden');
+                    btn.className = 'px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow transition';
+                }
+            });
 
-    // 1. Vacaciones Proporcionales con Prima del 30% (Arts. 177 y 187 CT)
-    // 15 días de salario por año + 30% de prima sobre dichos días
-    const valor15DiasVacaciones = salarioDiario * 15;
-    const primaVacacional = valor15DiasVacaciones * 0.30;
-    const totalAnualVacaciones = valor15DiasVacaciones + primaVacacional;
-    // Proporcional según tiempo laborado en el año actual (asumiendo fracción o año completo)
-    const fraccionAnioActual = (meses / 12.0);
-    const vacacionProporcional = (anos === 0 && meses > 0) 
-        ? (totalAnualVacaciones / 12.0) * meses 
-        : (totalAnualVacaciones / 365.0) * (totalMesesDecimal >= 12 ? (meses * 30) : (totalMesesDecimal * 30)); 
-    // Simplificación estándar proporcional basada en meses sobre el ciclo anual:
-    const montoVacaciones = (totalAnualVacaciones / 12.0) * (totalMesesDecimal % 12 + (anos > 0 && totalMesesDecimal % 12 === 0 ? 12 : 0)); 
-    // Ajuste seguro proporcional por mes:
-    const vacacionFinal = (totalAnualVacaciones / 12.0) * (totalMesesDecimal % 12) + (anos > 0 ? totalAnualVacaciones : 0); // Para simplificar fines académicos, calcularemos por mes fracción:
-    const montoVacacionCalculado = (totalAnualVacaciones / 12) * (totalMesesDecimal % 12); // Fracción del año en curso
-    const vacacionTotalAcumulada = (anos * totalAnualVacaciones) + montoVacacionCalculado;
-
-    // 2. Aguinaldo Proporcional (Arts. 198 y 202 CT)
-    // Antigüedad: 1 a <3 años = 15 días; 3 a <10 años = 19 días; 10+ años = 21 días.
-    let diasAguinaldo = 15;
-    if (anos >= 3 && anos < 10) diasAguinaldo = 19;
-    else if (anos >= 10) diasAguinaldo = 21;
-    
-    const aguinaldoAnualCompleto = salarioDiario * diasAguinaldo;
-    // Proporcional al año en curso (fracción de meses trabajados en el año)
-    const aguinaldoProporcional = (aguinaldoAnualCompleto / 12.0) * (meses);
-
-    // 3. Indemnización por Despido Injustificado (Art. 58 CT)
-    // 30 días por año de servicio y proporcional por fracciones. Mínimo 15 días.
-    let montoIndemnizacion = 0;
-    if (tipoCierre === 'despido') {
-        const indAnual = salarioDiario * 30 * anos;
-        const indFraccion = salarioDiario * 30 * (meses / 12.0);
-        montoIndemnizacion = indAnual + indFraccion;
-        const minimoLegal = salarioDiario * 15;
-        if (montoIndemnizacion < minimoLegal && totalMesesDecimal > 0) {
-            montoIndemnizacion = minimoLegal;
+            if (vista === 'historial') renderizarHistorial();
+            if (vista === 'simuladorTributario') ejecutarSimulacionFiscal();
         }
-    }
 
-    // 4. Horas Extras Diurnas (Recargo del 100% sobre hora normal -> se pagan al doble, es decir, hora normal * 2)
-    const pagoHoraExtraDiurna = salarioHoraNormal * 2.0;
-    const subtotalHEsDiurnas = pagoHoraExtraDiurna * hDiurnas;
+        function cambiarTipoDoc(tipo) {
+            const ren = document.getElementById('plantillaRenuncia');
+            const fin = document.getElementById('plantillaFiniquito');
+            const btnRen = document.getElementById('btnDocRenuncia');
+            const btnFin = document.getElementById('btnDocFiniquito');
 
-    // 5. Horas Extras Nocturnas (Recargo del 100% + 25% nocturnidad = pago al 125% adicional o factor 2.25 según Art. 169/170 CT, o 2.0 habitual por recargo de ley nocturno)
-    const pagoHoraExtraNocturna = salarioHoraNormal * 2.25; 
-    const subtotalHEsNocturnas = pagoHoraExtraNocturna * hNocturnas;
+            if (tipo === 'renuncia') {
+                ren.classList.remove('hidden');
+                fin.classList.add('hidden');
+                btnRen.className = 'px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow text-sm';
+                btnFin.className = 'px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow text-sm';
+            } else {
+                ren.classList.add('hidden');
+                fin.classList.remove('hidden');
+                btnFin.className = 'px-4 py-2 bg-blue-900 text-white font-semibold rounded-lg shadow text-sm';
+                btnRen.className = 'px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg shadow text-sm';
+            }
+        }
 
-    // 6. Días de Asueto Laborados (Art. 113 CT - pago triple o recargo del 100% adicional sobre el salario diario)
-    const montoAsuetos = (salarioDiario * 2.0) * diasAsueto;
+        function cargarEjemplo() {
+            document.getElementById('nombreTrabajador').value = 'Ana María Rivas';
+            document.getElementById('duiTrabajador').value = '02849102-5';
+            document.getElementById('nombreEmpresa').value = 'Comercializadora del Pacífico S.A. de C.V.';
+            document.getElementById('salarioMensual').value = '850.00';
+            document.getElementById('anosLaborados').value = '3';
+            document.getElementById('mesesLaborados').value = '4';
+            document.getElementById('diasLaborados').value = '10';
+            calcularPrestaciones();
+        }
 
-    // 7. Días de Descanso Semanal (Séptimo día) Laborados (Art. 51 CT - recargo del 100%)
-    const montoDescanso = (salarioDiario * 2.0) * diasDescanso;
+        // Conversor de número a letras en español
+        function numeroALetras(num) {
+            const unidades = ['', 'un', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciséis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte'];
+            const decenas = ['', '', 'veinti', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+            const centenas = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
 
-    // Total General de Liquidación
-    const montoTotal = vacacionTotalAcumulada + aguinaldoProporcional + montoIndemnizacion + 
-                       subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso;
+            function convertirGrupo(n) {
+                let salida = '';
+                if (n === 100) return 'cien';
+                if (n > 100) {
+                    salida += centenas[Math.floor(n / 100)] + ' ';
+                    n %= 100;
+                }
+                if (n <= 20) {
+                    salida += unidades[n];
+                } else {
+                    let d = Math.floor(n / 10);
+                    let u = n % 10;
+                    if (d === 2) {
+                        salida += 'veinti' + unidades[u];
+                    } else {
+                        salida += decenas[d];
+                        if (u > 0) salida += ' y ' + unidades[u];
+                    }
+                }
+                return salida.trim();
+            }
 
-    // Mostrar en el panel de resultados formateado a 2 decimales
-    document.getElementById('resVacaciones').innerText = `$${vacacionTotalAcumulada.toFixed(2)}`;
-    document.getElementById('resAguinaldo').innerText = `$${aguinaldoProporcional.toFixed(2)}`;
-    document.getElementById('resIndemnizacion').innerText = `$${montoIndemnizacion.toFixed(2)}`;
-    document.getElementById('resHEsDiurnas').innerText = `$${subtotalHEsDiurnas.toFixed(2)}`;
-    document.getElementById('resHEsNocturnas').innerText = `$${subtotalHEsNocturnas.toFixed(2)}`;
-    document.getElementById('resAsuetos').innerText = `$${montoAsuetos.toFixed(2)}`;
-    document.getElementById('resDescanso').innerText = `$${montoDescanso.toFixed(2)}`;
-    document.getElementById('resTotal').innerText = `$${montoTotal.toFixed(2)}`;
+            let entero = Math.floor(num);
+            let centavos = Math.round((num - entero) * 100);
+            let centavosStr = (centavos < 10 ? '0' : '') + centavos;
 
-    document.getElementById('panelResultados').style.display = 'block';
-}
-</script>
+            if (entero === 0) return `Son: cero dólares con ${centavosStr}/100 USD`;
 
+            let letras = '';
+            let millones = Math.floor(entero / 1000000);
+            let miles = Math.floor((entero % 1000000) / 1000);
+            let resto = entero % 1000;
+
+            if (millones > 0) {
+                if (millones === 1) letras += 'un millón ';
+                else letras += convertirGrupo(millones) + ' millones ';
+            }
+            if (miles > 0) {
+                if (miles === 1) letras += 'mil ';
+                else letras += convertirGrupo(miles) + ' mil ';
+            }
+            if (resto > 0) {
+                letras += convertirGrupo(resto) + ' ';
+            }
+
+            letras = letras.trim();
+            letras = letras.charAt(0).toUpperCase() + letras.slice(1);
+            return `Son: ${letras} dólares con ${centavosStr}/100 USD`;
+        }
+
+        // Cálculo de Renta MH El Salvador
+        function calcularRentaSV(sujetoRenta) {
+            let renta = 0;
+            if (sujetoRenta > 472.00 && sujetoRenta <= 895.24) {
+                renta = (sujetoRenta - 472.00) * 0.10 + 17.50;
+            } else if (sujetoRenta > 895.24 && sujetoRenta <= 2038.10) {
+                renta = (sujetoRenta - 895.24) * 0.20 + 60.00;
+            } else if (sujetoRenta > 2038.10) {
+                renta = (sujetoRenta - 2038.10) * 0.30 + 288.57;
+            }
+            return Math.max(0, renta);
+        }
+
+        // Función Principal de Cálculo de Liquidación
+        let ultimoCalculoCache = null;
+
+        function calcularPrestaciones() {
+            const nombre = document.getElementById('nombreTrabajador').value || 'Sin nombre';
+            const dui = document.getElementById('duiTrabajador').value || '00000000-0';
+            const empresa = document.getElementById('nombreEmpresa').value || 'Empresa';
+            const salarioMensual = parseFloat(document.getElementById('salarioMensual').value) || 0;
+            const anos = parseInt(document.getElementById('anosLaborados').value) || 0;
+            const meses = parseInt(document.getElementById('mesesLaborados').value) || 0;
+            const dias = parseInt(document.getElementById('diasLaborados').value) || 0;
+            const vacacionesPagadas = document.getElementById('vacacionesPagadas').value;
+            const tipoCierre = document.getElementById('tipoCierre').value;
+            
+            const hDiurnas = parseFloat(document.getElementById('horasExtrasDiurnas').value) || 0;
+            const hNocturnas = parseFloat(document.getElementById('horasExtrasNocturnas').value) || 0;
+            const diasAsueto = parseFloat(document.getElementById('diasAsueto').value) || 0;
+            const diasDescanso = parseFloat(document.getElementById('diasDescanso').value) || 0;
+
+            const salarioDiario = salarioMensual / 30.0;
+            const salarioHoraNormal = salarioDiario / 8.0;
+            const totalMesesDecimal = anos * 12 + meses + (dias / 30.0);
+
+            // 1. Vacaciones Proporcionales con Prima del 30%
+            let vacacionTotalAcumulada = 0;
+            if (vacacionesPagadas === 'no') {
+                const valor15DiasVacaciones = salarioDiario * 15;
+                const primaVacacional = valor15DiasVacaciones * 0.30;
+                const totalAnualVacaciones = valor15DiasVacaciones + primaVacacional;
+                const montoVacacionCalculado = (totalAnualVacaciones / 12.0) * meses + (totalAnualVacaciones / 365.0) * dias; 
+                vacacionTotalAcumulada = (anos * totalAnualVacaciones) + montoVacacionCalculado;
+            }
+
+            // 2. Aguinaldo Proporcional
+            let diasAguinaldo = 15;
+            if (anos >= 3 && anos < 10) diasAguinaldo = 19;
+            else if (anos >= 10) diasAguinaldo = 21;
+            const aguinaldoAnualCompleto = salarioDiario * diasAguinaldo;
+            const aguinaldoProporcional = (aguinaldoAnualCompleto / 12.0) * meses + (aguinaldoAnualCompleto / 365.0) * dias;
+
+            // 3. Indemnización (Art. 58 CT)
+            let montoIndemnizacion = 0;
+            if (tipoCierre === 'despido') {
+                const indAnual = salarioDiario * 30 * anos;
+                const indFraccion = salarioDiario * 30 * ((meses * 30 + dias) / 365.0);
+                montoIndemnizacion = indAnual + indFraccion;
+                const minimoLegal = salarioDiario * 15;
+                if (montoIndemnizacion < minimoLegal && totalMesesDecimal > 0) {
+                    montoIndemnizacion = minimoLegal;
+                }
+            }
+
+            // 4. Horas Extras y Asuetos
+            const subtotalHEsDiurnas = (salarioHoraNormal * 2.0) * hDiurnas;
+            const subtotalHEsNocturnas = (salarioHoraNormal * 2.25) * hNocturnas;
+            const montoAsuetos = (salarioDiario * 2.0) * diasAsueto;
+            const montoDescanso = (salarioDiario * 2.0) * diasDescanso;
+
+            const montoBruto = vacacionTotalAcumulada + aguinaldoProporcional + montoIndemnizacion + 
+                               subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso;
+
+            // Deducciones de Ley
+            const baseGravableSocial = (subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso) + (salarioMensual > 0 ? salarioMensual : 0);
+            const montoISSS = Math.min(baseGravableSocial, 1000.00) * 0.03;
+            const montoAFP = baseGravableSocial * 0.0725;
+            const montoRenta = calcularRentaSV(montoBruto - (montoISSS + montoAFP));
+
+            const totalDeducciones = montoISSS + montoAFP + montoRenta;
+            const montoTotalNeto = Math.max(0, montoBruto - totalDeducciones);
+            const letrasTotal = numeroALetras(montoTotalNeto);
+            const fechaActualStr = new Date().toLocaleDateString('es-SV', { year: 'numeric', month: 'long', day: 'numeric' });
+            const folioUnico = 'SV-LIQ-' + Math.floor(100000 + Math.random() * 900000);
+
+            // Cache para Historial y PDF
+            ultimoCalculoCache = {
+                fecha: fechaActualStr,
+                folio: folioUnico,
+                nombre, dui, empresa, salarioMensual, anos, meses, dias,
+                tipoCierre: tipoCierre === 'despido' ? 'Despido Injustificado' : 'Renuncia Voluntaria',
+                vacacionTotalAcumulada, aguinaldoProporcional, montoIndemnizacion,
+                subtotalHEsDiurnas, subtotalHEsNocturnas, montoAsuetos, montoDescanso,
+                montoBruto, montoISSS, montoAFP, montoRenta, montoTotalNeto, letrasTotal
+            };
+
+            // Rellenar UI resultados
+            document.getElementById('resVacaciones').innerText = `$${vacacionTotalAcumulada.toFixed(2)}`;
+            document.getElementById('resAguinaldo').innerText = `$${aguinaldoProporcional.toFixed(2)}`;
+            document.getElementById('resIndemnizacion').innerText = `$${montoIndemnizacion.toFixed(2)}`;
+            document.getElementById('resHEsDiurnas').innerText = `$${subtotalHEsDiurnas.toFixed(2)}`;
+            document.getElementById('resHEsNocturnas').innerText = `$${subtotalHEsNocturnas.toFixed(2)}`;
+            document.getElementById('resAsuetos').innerText = `$${montoAsuetos.toFixed(2)}`;
+            document.getElementById('resDescanso').innerText = `$${montoDescanso.toFixed(2)}`;
+            document.getElementById('resBruto').innerText = `$${montoBruto.toFixed(2)}`;
+            
+            document.getElementById('resISSS').innerText = `-$${montoISSS.toFixed(2)}`;
+            document.getElementById('resAFP').innerText = `-$${montoAFP.toFixed(2)}`;
+            document.getElementById('resRenta').innerText = `-$${montoRenta.toFixed(2)}`;
+            document.getElementById('resTotalNeto').innerText = `$${montoTotalNeto.toFixed(2)}`;
+            document.getElementById('resMontoLetras').innerText = letrasTotal;
+
+            // Rellenar Comprobante Imprimible
+            document.getElementById('vFolio').innerText = folioUnico;
+            document.getElementById('vFecha').innerText = fechaActualStr;
+            document.getElementById('vEmpresa').innerText = empresa;
+            document.getElementById('vNombre').innerText = nombre;
+            document.getElementById('vDui').innerText = dui;
+            document.getElementById('vSalario').innerText = `$${salarioMensual.toFixed(2)}`;
+            document.getElementById('vTiempo').innerText = `${anos} años, ${meses} meses, ${dias} días`;
+            document.getElementById('vCausa').innerText = tipoCierre === 'despido' ? 'Despido Injustificado (Art. 58 CT)' : 'Renuncia Voluntaria';
+
+            // Desglose dinámico en comprobante
+            const desgloseContainer = document.getElementById('vDesgloseContainer');
+            desgloseContainer.innerHTML = `
+                <div class="flex justify-between border-b py-1"><span>Vacaciones y Prima:</span> <span>$${vacacionTotalAcumulada.toFixed(2)}</span></div>
+                <div class="flex justify-between border-b py-1"><span>Aguinaldo Proporcional:</span> <span>$${aguinaldoProporcional.toFixed(2)}</span></div>
+                <div class="flex justify-between border-b py-1"><span>Indemnización Laboral:</span> <span>$${montoIndemnizacion.toFixed(2)}</span></div>
+                <div class="flex justify-between border-b py-1"><span>Horas Extras y Asuetos:</span> <span>$${(subtotalHEsDiurnas + subtotalHEsNocturnas + montoAsuetos + montoDescanso).toFixed(2)}</span></div>
+                <div class="flex justify-between border-b py-1 text-red-600"><span>Deducciones (ISSS, AFP, Renta):</span> <span>-$${totalDeducciones.toFixed(2)}</span></div>
+            `;
+            document.getElementById('vTotalNeto').innerText = `$${montoTotalNeto.toFixed(2)}`;
+            document.getElementById('vMontoLetras').innerText = letrasTotal;
+
+            // Sincronizar documentos legales
+            document.getElementById('docFechaRenuncia').innerText = fechaActualStr;
+            document.getElementById('docEmpresaRenuncia').innerText = empresa;
+            document.getElementById('docNombreRenuncia').innerText = nombre;
+            document.getElementById('docDuiRenuncia').innerText = dui;
+
+            document.getElementById('docFechaFiniquito').innerText = fechaActualStr;
+            document.getElementById('docEmpresaFiniquito').innerText = empresa;
+            document.getElementById('docNombreFiniquito').innerText = nombre;
+            document.getElementById('docDuiFiniquito').innerText = dui;
+            document.getElementById('docMontoFiniquito').innerText = `$${montoTotalNeto.toFixed(2)}`;
+
+            document.getElementById('panelResultados').classList.remove('hidden');
+            document.getElementById('panelComprobante').classList.remove('hidden');
+        }
+
+        // Historial Local con LocalStorage
+        function guardarLiquidacionHistorial() {
+            if (!ultimoCalculoCache) {
+                calcularPrestaciones();
+            }
+            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
+            historial.unshift(ultimoCalculoCache);
+            if (historial.length > 20) historial.pop(); // Mantener últimos 20
+            localStorage.setItem('historialLiquidacionesSV', JSON.stringify(historial));
+            alert('Liquidación guardada correctamente en el historial local.');
+        }
+
+        function renderizarHistorial() {
+            const tbody = document.getElementById('tablaHistorialBody');
+            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
+            if (historial.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">No hay liquidaciones guardadas en el historial.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = historial.map((item, idx) => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3">${item.fecha}</td>
+                    <td class="p-3 font-semibold">${item.nombre}</td>
+                    <td class="p-3">${item.empresa}</td>
+                    <td class="p-3">$${item.salarioMensual.toFixed(2)}</td>
+                    <td class="p-3 font-bold text-blue-900">$${item.montoTotalNeto.toFixed(2)}</td>
+                    <td class="p-3">
+                        <button onclick="cargarHistorialItem(${idx})" class="text-blue-600 hover:underline mr-2 font-semibold">Cargar</button>
+                        <button onclick="eliminarHistorialItem(${idx})" class="text-red-600 hover:underline font-semibold">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function cargarHistorialItem(idx) {
+            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
+            const item = historial[idx];
+            if (!item) return;
+            document.getElementById('nombreTrabajador').value = item.nombre;
+            document.getElementById('duiTrabajador').value = item.dui;
+            document.getElementById('nombreEmpresa').value = item.empresa;
+            document.getElementById('salarioMensual').value = item.salarioMensual;
+            document.getElementById('anosLaborados').value = item.anos;
+            document.getElementById('mesesLaborados').value = item.meses;
+            document.getElementById('diasLaborados').value = item.dias;
+            cambiarVista('calculadora');
+            calcularPrestaciones();
+        }
+
+        function eliminarHistorialItem(idx) {
+            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
+            historial.splice(idx, 1);
+            localStorage.setItem('historialLiquidacionesSV', JSON.stringify(historial));
+            renderizarHistorial();
+        }
+
+        function limpiarHistorial() {
+            if (confirm('¿Está seguro de limpiar todo el historial guardado?')) {
+                localStorage.removeItem('historialLiquidacionesSV');
+                renderizarHistorial();
+            }
+        }
+
+        function exportarJSON() {
+            let historial = localStorage.getItem('historialLiquidacionesSV') || '[]';
+            let blob = new Blob([historial], { type: 'application/json' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'liquidaciones_el_salvador.json';
+            a.click();
+        }
+
+        function exportarCSV() {
+            let historial = JSON.parse(localStorage.getItem('historialLiquidacionesSV') || '[]');
+            if (historial.length === 0) {
+                alert('No hay datos para exportar.');
+                return;
+            }
+            let csv = 'Fecha,Folio,Trabajador,DUI,Empresa,SalarioMensual,NetoAPagar\n';
+            historial.forEach(item => {
+                csv += `"${item.fecha}","${item.folio}","${item.nombre}","${item.dui}","${item.empresa}",${item.salarioMensual},${item.montoTotalNeto}\n`;
+            });
+            let blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'liquidaciones_el_salvador.csv';
+            a.click();
+        }
+
+        // Simulador Fiscal
+        function ejecutarSimulacionFiscal() {
+            const salario = parseFloat(document.getElementById('simSalario').value) || 0;
+            const isss = Math.min(salario, 1000.00) * 0.03;
+            const afp = salario * 0.0725;
+            const sujetoRenta = salario - (isss + afp);
+            const renta = calcularRentaSV(sujetoRenta);
+
+            document.getElementById('simResISSS').innerText = `-$${isss.toFixed(2)}`;
+            document.getElementById('simResAFP').innerText = `-$${afp.toFixed(2)}`;
+            document.getElementById('simResRenta').innerText = `-$${renta.toFixed(2)}`;
+
+            let tramoStr = "Tramo I: Exento";
+            if (sujetoRenta > 472.00 && sujetoRenta <= 895.24) tramoStr = "Tramo II (10% sobre exceso de $472.00 + $17.50)";
+            else if (sujetoRenta > 895.24 && sujetoRenta <= 2038.10) tramoStr = "Tramo III (20% sobre exceso de $895.24 + $60.00)";
+            else if (sujetoRenta > 2038.10) tramoStr = "Tramo IV (30% sobre exceso de $2,038.10 + $288.57)";
+            document.getElementById('simTramo').innerText = tramoStr;
+        }
+
+        // Exportar PDF profesional con jsPDF
+        function exportarPDFjsPDF() {
+            if (!ultimoCalculoCache) calcularPrestaciones();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.setTextColor(15, 23, 42);
+            doc.text("COMPROBANTE OFICIAL DE LIQUIDACIÓN LABORAL", 14, 20);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(100, 100, 100);
+            doc.text("República de El Salvador - Código de Trabajo", 14, 26);
+            
+            doc.setLineWidth(0.5);
+            doc.line(14, 30, 196, 30);
+
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(0, 0, 0);
+            doc.text("Datos Generales:", 14, 38);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Folio Único: ${ultimoCalculoCache.folio}`, 14, 44);
+            doc.text(`Fecha de Emisión: ${ultimoCalculoCache.fecha}`, 14, 50);
+            doc.text(`Empresa / Empleador: ${ultimoCalculoCache.empresa}`, 14, 56);
+            doc.text(`Trabajador: ${ultimoCalculoCache.nombre} (DUI: ${ultimoCalculoCache.dui})`, 14, 62);
+            doc.text(`Salario Mensual Base: $${ultimoCalculoCache.salarioMensual.toFixed(2)}`, 14, 68);
+            doc.text(`Tiempo Laborado: ${ultimoCalculoCache.anos} años, ${ultimoCalculoCache.meses} meses, ${ultimoCalculoCache.dias} días`, 14, 74);
+            doc.text(`Causa de Retiro: ${ultimoCalculoCache.tipoCierre}`, 14, 80);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("Desglose Económico:", 14, 90);
+            doc.setFont("helvetica", "normal");
+            doc.text(`- Vacaciones Proporcionales y Prima: $${ultimoCalculoCache.vacacionTotalAcumulada.toFixed(2)}`, 18, 98);
+            doc.text(`- Aguinaldo Proporcional: $${ultimoCalculoCache.aguinaldoProporcional.toFixed(2)}`, 18, 104);
+            doc.text(`- Indemnización Laboral: $${ultimoCalculoCache.montoIndemnizacion.toFixed(2)}`, 18, 110);
+            doc.text(`- Horas Extras y Asuetos: $${(ultimoCalculoCache.subtotalHEsDiurnas + ultimoCalculoCache.subtotalHEsNocturnas + ultimoCalculoCache.montoAsuetos + ultimoCalculoCache.montoDescanso).toFixed(2)}`, 18, 116);
+            doc.text(`- Deducciones (ISSS, AFP, Renta): -$${(ultimoCalculoCache.montoISSS + ultimoCalculoCache.montoAFP + ultimoCalculoCache.montoRenta).toFixed(2)}`, 18, 122);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text(`TOTAL NETO A PERCIBIR: $${ultimoCalculoCache.montoTotalNeto.toFixed(2)}`, 14, 134);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "italic");
+            doc.text(ultimoCalculoCache.letrasTotal, 14, 142);
+
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(9);
+            doc.setTextColor(180, 50, 50);
+            doc.text("ADVERTENCIA: Documento informativo de simulación de liquidación conforme a la ley salvadoreña.", 14, 160);
+
+            doc.line(14, 190, 80, 190);
+            doc.line(130, 190, 196, 190);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(0, 0, 0);
+            doc.text("Firma del Empleador", 30, 195);
+            doc.text("Firma del Trabajador", 145, 195);
+
+            doc.save(`Liquidacion_${ultimoCalculoCache.nombre.replace(/\s+/g, '_')}.pdf`);
+        }
+
+        // Ejecutar cálculo inicial al cargar
+        window.onload = function() {
+            calcularPrestaciones();
+        };
+    </script>
 </body>
 </html>
